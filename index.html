@@ -494,6 +494,8 @@ for (var r = 0; r < KH; r++) for (var c = 0; c < KW; c++) {
     if (a || d) cell.appendChild(el('span', {'class':'num'}, String(++num)));
     var inp = el('input', {maxlength:'1', autocomplete:'off', autocapitalize:'characters', spellcheck:'false', 'aria-label':'Rad ' + (r+1) + ', kolumn ' + (c+1)});
     (function(r, c, inp, cell){
+      inp.addEventListener('focus', function(){
+        if (cur && cur[0] === r && cur[1] === c) return;
         var h = open(r, c-1) || open(r, c+1), v = open(r-1, c) || open(r+1, c);
         dir = h && !v ? 'A' : (v && !h ? 'D' : dir); cur = [r, c];
       });
