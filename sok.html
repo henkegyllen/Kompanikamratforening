@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sök i FAL-A · 333</title>
+<meta name="description" content="Sök fram anropssignal, befattning och enhet i hemvärnets organisation.">
+<meta name="theme-color" content="#3b4a3e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#3b4a3e; --card:#46574a; --card2:#506252; --line:#d8d4c4;
+  --text:#f2f0e7; --muted:#d8d4c4; --yellow:#c9bb3e; --ink:#1f2a20; --r:12px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Barlow Condensed',system-ui,sans-serif;font-size:18px;line-height:1.35;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:'Oswald',system-ui,sans-serif;text-transform:uppercase;letter-spacing:.02em;margin:0}
+a{color:var(--yellow)}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+
+.top{display:flex;align-items:center;min-height:52px;padding-top:6px}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--text);text-decoration:none;font-weight:700}
+.back svg{width:20px;height:20px}
+header h1{font-size:36px;line-height:1.05;margin-top:10px}
+header p{margin:6px 0 0;color:var(--muted);font-weight:600}
+
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 0 10px}
+.search{width:100%;min-height:52px;border-radius:var(--r);border:2px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:19px;padding:8px 14px}
+.search::placeholder{color:#c3bfae}
+.search:focus{outline:3px solid var(--yellow);outline-offset:1px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-top:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex-shrink:0;min-height:40px;border:2px solid var(--line);background:transparent;color:var(--text);border-radius:999px;padding:4px 14px;font-weight:700;font-size:16px}
+.chips button:active{background:var(--yellow);color:var(--ink);border-color:var(--yellow)}
+
+.status{color:var(--muted);font-weight:600;font-size:16px;margin:4px 0 10px;min-height:22px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hit{background:var(--card);border-radius:var(--r);overflow:hidden}
+.hit>button{display:block;width:100%;text-align:left;background:transparent;border:0;color:inherit;padding:12px 14px;min-height:64px}
+.hit>button:active{background:var(--card2)}
+.hit .an{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px}
+.hit .an b{font-family:'Oswald',sans-serif;font-weight:600;font-size:21px;letter-spacing:.01em}
+.hit .an span{font-size:15px;font-weight:700;color:var(--muted)}
+.hit .bef{font-weight:700;margin-top:2px}
+.hit .enh{color:var(--muted);font-size:16px;font-weight:500;margin-top:2px}
+.badge{display:inline-block;background:var(--yellow);color:var(--ink);border-radius:6px;padding:0 6px;font-size:13px;font-weight:700;margin-left:auto}
+.hit.open{outline:2px solid var(--yellow)}
+.det{display:none;padding:0 14px 14px}
+.hit.open .det{display:block}
+.det dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;border-top:2px solid rgba(216,212,196,.3);padding-top:12px}
+.det dt{color:var(--muted);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;padding-top:2px}
+.det dd{margin:0;font-weight:600;word-break:break-word}
+.det .big{font-family:'Oswald',sans-serif;font-size:24px;font-weight:600;line-height:1.1}
+.det .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.det .btn{min-height:46px;border-radius:var(--r);border:2px solid var(--line);background:transparent;color:var(--text);font-weight:700;font-size:17px;text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px 10px}
+.det .btn.primary{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+.det [hidden]{display:none}
+
+.empty{background:var(--card);border-radius:var(--r);padding:16px;color:var(--muted);font-weight:600}
+.empty b{color:var(--text)}
+.empty ul{margin:8px 0 0;padding-left:20px}
+footer{padding:36px 0 50px;color:var(--muted);font-weight:600;font-size:15px;text-align:center}
+footer p{margin:6px 0}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="./"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>Bordshäftet</a>
+  </div>
+  <header>
+    <h1>Sök i FAL-A</h1>
+    <p>Anropssignal, befattning och enhet för varje plats i hemvärnet.</p>
+  </header>
+
+  <div class="bar">
+    <input class="search" id="q" type="search" placeholder="T.ex. 333 Bertil Erik 05" autocomplete="off" spellcheck="false" aria-label="Sök">
+    <div class="chips" id="chips">
+      <button type="button" data-q="333 KC">Vår KC</button>
+      <button type="button" data-q="333 gruppchef">Gruppchefer 333</button>
+      <button type="button" data-q="333 troppchef">Troppchef 333</button>
+      <button type="button" data-q="SigurdMartin">SigurdMartin</button>
+      <button type="button" data-q="33 BC">Bataljonschef 33</button>
+    </div>
+  </div>
+
+  <p class="status" id="status" aria-live="polite"></p>
+  <ul class="list" id="list"></ul>
+  <div class="empty" id="empty">
+    <b>Så söker du</b>
+    <ul>
+      <li>Kompani, pluton, grupp och nummer: <i>333 Bertil Erik 05</i> eller <i>333 B E 5</i></li>
+      <li>Anrop: <i>ErikBertil 5</i> eller <i>EBSM5</i></li>
+      <li>Befattning: <i>gruppchef</i>, <i>KC</i>, <i>KF</i>, <i>sjukvård</i></li>
+    </ul>
+  </div>
+
+  <footer>
+    <p>Bygger på öppna källor och antaganden. Inte ett officiellt dokument.</p>
+    <p>Militärregionernas anrop är okända och visas inom hakparentes, t.ex. [MR S].</p>
+    <p>333. Hemvärnsinsatskompaniet · Kompanikamratföreningen</p>
+  </footer>
+</div>
+
+<script>
+// ===================== Inställningar =====================
+const CFG={
+  du:'Din soldat',                               // skylten vid den valda soldaten
+  standard:'33-333-B-E-05',                      // soldaten som är vald när ingen annan anges (bataljon-kompani-pluton-grupp-nummer)
+  hemorter:{33:['Eksjö',57.667,14.972]},
+  ortForskjutning:[10.7,3.6],                   // orten ritas en bit sydost om soldaten (enheter à 0,4 km), så att namnet inte hamnar på markeringen         // bataljonens ort på kartan; saknas den används bataljonens ungefärliga plats och namn
+  bokstavering:{A:'Adam',B:'Bertil',C:'Cesar',D:'David',E:'Erik',F:'Filip',G:'Gustav',H:'Helge',I:'Ivar',J:'Johan',K:'Kalle',
+    L:'Ludvig',M:'Martin',N:'Niklas',O:'Olof',P:'Petter',Q:'Quintus',R:'Rudolf',S:'Sigurd',T:'Tore',U:'Urban',V:'Viktor',
+    W:'Wilhelm',X:'Xerxes',Y:'Yngve',Z:'Zäta','Å':'Åke','Ä':'Ärlig','Ö':'Östen'},
+  bet:{                                          // beteckningar: MR · bataljon · kompani · pluton · grupp · nummer (01 = chef, 02 = stf)
+    plutoner:'ABCD',                             // kompaniets plutoner: Adam, Bertil, Cesar, David
+    grupper:'EFGH',                              // grupperna i en pluton (och i troppen): Erik, Filip, Gustav, Helge
+    plutonsledning:'PL',                         // intern kod för plutonsledningen (har ingen egen signal: plutonens signal + 1, 2, 3, 11, 12 …)
+    tropp:'D',                                   // troppen = kompaniets fjärde pluton (motsvarande): David – DS, grupperna ED–HD
+    kompaniledning:'K',                          // intern kod; kompaniledningen använder kompaniets signal + befattningsnummer (SM1 KC, SM2 stf, SM4 KF)
+    bataljon:'Bat',                              // bataljonens egna plutoner står i kompaniets ställe
+    bataljonsplutoner:{Stab:'Y','':'L',Grk:'X',CBRN:'C',Und:'K',Trafik:'I','Pionjär':'P','Båt':'Z',Flyg:'N',TOLO:'O'},   // båtpluton Z och flyggrupp N enligt H Hvbat 22; övriga antagna – aldrig Q–W (kompaniernas)
+    extraGrupper:'IJKLMNO'                       // FAL-A 1.2.3: 5.–9. grupp/tropp = I–M (Grk-plutonens tionde blir N)
+  },
+  anrop:{                                        // anropssignaler: egen bokstav + överordnad enhets egen bokstav
+    visa:true,                                   // false = inga anropssignaler i presentationen
+    regioner:{},                                 // militärregionernas anrop, t.ex. S:'XY' – okända än så länge; saknas de visas [MR S] som platshållare
+    kompanibokstaver:'QRSTNUW',                  // FAL-A 1.2.2: 1.–4. kompaniet Q R S T, därefter reserv N U W (333 = S)
+    // bataljonens egna delar (FAL-A 4.4.3–4.4.5 och H Hvbat 22): * = bataljonens bokstav, # = RS-bokstav, = = bataljonens egen signal
+    bataljonsdelar:{Stab:'=','':'AP',Grk:'A*','Pionjär':'L*',Und:'K*',CBRN:'Q#',Trafik:'T#','Båt':'Z*',Flyg:'N*',TOLO:'X*'},
+    rsBokstav:{N:'B',M:'C',V:'D',S:'E',G:'F'},   // RS N = NB, RS M = NC … (FAL-A 2.1); CBRN och trafik är militärregionsresurser
+    ledningspluton:['E','J','F'],                // lednplut AP: stabsgrupp = 1. ledngrupp EA, sambandsgrupp = 1. sbgrp JA, transport/ordonnans = 2. ledngrupp FA
+    kompanier:{145:'WU',214:'WM',234:'WU',414:'WO',307:'WJ',354:'WU',485:'WW'},   // undantag; två bokstäver = hela anropet. Hemvärnsunderrättelsekompanierna enligt beslutet (Hvund-komp)
+    // bataljonens anrop (beslut FM2019-26245:1, 2020-04-22, avsnitt 2.2). Anropen återanvänds i varje MR; sista bokstaven ärvs av kompanierna (333 = SigurdMartin).
+    bataljoner:{10:'VJ',11:'VL',12:'VM',13:'VN',14:'VU',15:'VO',16:'VP',                                     // MR N
+                17:'VJ',18:'VL',21:'VM',22:'VN',23:'VU',24:'VO',25:'VP',26:'VQ',27:'VV',28:'VW',29:'VX',      // MR M
+                19:'VJ',20:'VL',38:'VM',39:'VN',40:'VU',41:'VO',42:'VP',43:'VQ',44:'VV',45:'VW',              // MR V
+                30:'VJ',31:'VL',33:'VM',34:'VN',35:'VU',36:'VO',37:'VP',46:'VQ',47:'VV',48:'VW',49:'VX',      // MR S
+                32:'VW'}                                                                                     // Gotland                                                                                     // Gotland
+  },                                             // pluton = A–D + kompaniets bokstav (BertilSigurd), grupp = E–H + plutonens (ErikBertil)
+  plutonsledning:{hjul:6,band:5},                // 2 chefer (plutonchef lila, stf rosa) + övriga
+  egetKompani:333,                               // kompaniet med egen uppbyggnad nedan
+  egnaPlutoner:['H','H','B'],                    // 333:s skytteplutoner (H = hjulgående, B = bandgående)
+  troppKompanier:'alla',                         // 'alla' = varje insatskompani byggs som 333 (tre skytteplutoner + tropp); annars en lista, t.ex. [333]
+  plutonerPerKompani:{I:4,B:3,U:3,'Båt':3,S:3},  // insatskompanier utan tropp; D HV 2023: insats 3–4, bevakning 2–4, underrättelse 3 plutoner
+  gruppStorlek:{I:8,B:6,U:6,'Båt':6,S:6,spec:8}, // soldater per grupp (D HV: bevakningspluton fyra grupper, minst 25 personer)
+  tropp:{ledning:1,grupper:[10,12,6,7],          // troppen ritas som en pluton: 1 chef i ledningen, grupperna med gruppchef och stf
+         namn:['Stab och samband','Sjukvård','Packgrupp','Kokgrupp']},
+  kompaniledning:['KC','stf KC','KF','','','','',''],   // med text = egen etikett, tom = övriga
+  klGrupper:[4,4],                               // kompaniledningen ritas som 4 + 4
+  roller:{'KC':'chef','stf KC':'stf','KF':'kf'}, // färg: chef = lila, stf = rosa, kf = blågrön
+  langtUt:'soldater',                            // längst ut: 'soldater' = varenda soldat ritas ut, 'block' = kompaniblock
+  // bataljonens egna delar enligt Handbok Hemvärnsbataljon 2022 (H Hvbat 22): ledning (chefer) + grupper
+  plutonstyper:{
+    Stab:{ledning:['BC','stf BC','BF'],grupper:[4,4,6,6,3],namn:['S1 Personaltjänst/Själavård/Info','S2 Underrättelse/Säkerhetstjänst','S3/5 Ledning/Samverkan/CBRN/Fältarbeten','S4 Logistik','S6 Ledningssystem']},
+    '':{ledning:2,grupper:[6,6,7],namn:['Stabsgrupp','Sambandsgrupp','Transport- och ordonnansgrupp']},            // ledningspluton 21
+    Grk:{ledning:2,grupper:[7,4,6,6,6,8,6,6,6,6],namn:['Bekämpningsledningsgrupp','Rekognoseringsgrupp','Eldledningsgrupp','Eldledningsgrupp','Pjäsplatsgrupp','Ammunitionsgrupp','Pjäsgrupp','Pjäsgrupp','Pjäsgrupp','Pjäsgrupp']},
+    'Pionjär':{ledning:6,grupper:[8,8,8,8],namn:['Pionjärgrupp','Pionjärgrupp','Pionjärgrupp','Pionjärgrupp']},
+    CBRN:{ledning:8,grupper:[8,8,8],namn:['CBRN-underrättelsegrupp','CBRN-underrättelsegrupp','CBRN-saneringsgrupp']},
+    Trafik:{ledning:8,grupper:[8,8,8],namn:['Trafikgrupp','Trafikgrupp','Trafikgrupp']},
+    TOLO:{ledning:2,grupper:[5,3],namn:['Drivmedelssoldater','Ammunitionssoldater']}
+  },
+  antagenPluton:6,                               // bevaknings-, lednings-, special-, båt- och skärgårdsplutoner: antagen plutonsledning
+  kompanityper:{I:'Insatskompani',B:'Bevakningskompani',U:'Underrättelsekompani','Båt':'Båtkompani',S:'Skärgårdskompani'},
+  kompaninamn:{I:'Insatskompaniet',B:'Bevakningskompaniet',U:'Underrättelsekompaniet','Båt':'Båtkompaniet',S:'Skärgårdskompaniet'},
+  kompaniord:{I:['insatskompani','insatskompanier'],B:['bevakningskompani','bevakningskompanier'],U:['underrättelsekompani','underrättelsekompanier'],'Båt':['båtkompani','båtkompanier'],S:['skärgårdskompani','skärgårdskompanier']},
+  plutonsord:{I:['skyttepluton','skytteplutoner'],B:['bevakningspluton','bevakningsplutoner'],U:['underrättelsepluton','underrättelseplutoner'],'Båt':['båtpluton','båtplutoner'],S:['skärgårdspluton','skärgårdsplutoner']},
+  plutonsnamn:{Stab:'Bataljonsstab',TOLO:'TOLO-grupp',Grk:'Grk-pluton',CBRN:'CBRN-pluton','Pionjär':'Pionjärpluton',Und:'Underrättelsepluton',Trafik:'Trafikpluton','Båt':'Båtpluton'},
+  plutonsnamnBest:{Bataljonsstab:'bataljonsstaben','TOLO-grupp':'TOLO-gruppen',Ledningspluton:'ledningsplutonen','Grk-pluton':'granatkastarplutonen','CBRN-pluton':'CBRN-plutonen','Pionjärpluton':'pionjärplutonen',
+    Underrättelsepluton:'underrättelseplutonen',Trafikpluton:'trafikplutonen','Båtpluton':'båtplutonen'},
+  regioner:[
+    {id:'S',namn:'MR S',full:'Södra militärregionen',etikettPa:[56.25,13.55]},
+    {id:'M',namn:'MR M',full:'Mellersta militärregionen',etikettPa:[60.35,16.30]},
+    {id:'V',namn:'MR V',full:'Västra militärregionen',etikettPa:[59.95,12.35]},
+    {id:'N',namn:'MR N',full:'Norra militärregionen',etikettPa:[66.30,17.40]},
+    {id:'G',namn:'P 18',full:'Militärregion Gotland',etikettPa:[58.20,18.75]}
+  ],
+  orgRader:[['N','M','V'],['S','G']],            // regionernas placering i organisationsbilden
+  // bataljonerna (öppna källor, maxtak): nr, namn, MR, kompanier "nr typ" (I insats, B bevakning, Båt, S skärgård),
+  // bataljonens egna plutoner utöver ledningsplutonen, antal hjul- och bandgående plutoner, ungefärlig plats på kartan (lat, lon)
+  bataljoner:[
+    // nummer, namn och MR enligt Försvarsmakten och beslut FM2019-26245:1; kompanityper och antal, båt-, CBRN-, pionjär-, trafik- och Grk-plutoner
+    // enligt Försvarsmaktens sidor per utbildningsgrupp (okt 2026). Underrättelsekompaniernas nummer (145, 214, 234, 307, 354, 414, 485) enligt beslut FM2019-26245:1.
+    // 33: 331–334, 333 insats och 334 bevakning (kompaniet självt); 331 och 332 antas vara insats.
+    // Bekräftade enskilda kompanier: 241 S:t Erik (I), 242 Birger Jarl (I), 243, 252, 253 Huddinge (B), 234 Svea (U), 461.
+    // Antagna: 26 och 46–47 (antal anges inte), 306 (finns troligen, typ okänd), övriga kompaninummer och ordning, fordon.
+    // Typer: I insats, B bevakning, U underrättelse, Båt, S skärgård. Bataljonsstab, ledningspluton och TOLO (MR N) läggs till automatiskt. Musikkårer och flyggrupper är inte med.
+    [10,'Lapplandsjägarbataljonen','N','101 I,102 I,103 B','',0,8,[67.86,20.23]],
+    [11,'Gränsjägarbataljonen','N','111 I,112 I,113 I,114 B','Båt',0,12,[66.40,23.30]],
+    [12,'Norrbottensbataljonen','N','121 I,122 I,123 B,124 B','Pionjär',0,8,[65.83,21.69]],
+    [13,'Västerbottensbataljonen','N','131 I,132 I,133 I,134 B,135 B,136 B,137 B','CBRN,Båt',0,12,[64.05,19.90]],
+    [14,'Fältjägarbataljonen','N','141 I,142 I,143 I,144 B,145 U','',0,12,[63.18,14.64]],
+    [15,'Ångermanlandsbataljonen','N','151 I,152 I,153 B,154 B','Båt,Trafik',0,8,[63.29,18.40]],
+    [16,'Medelpadsbataljonen','N','161 I,162 I,163 I,164 B','Båt',0,12,[62.39,16.90]],
+    [17,'Dalabataljonen','M','171 I,172 I,173 B','Pionjär',8,1,[60.61,15.20]],
+    [18,'Gävleborgsbataljonen','M','181 I,182 I,183 B','Båt',8,0,[60.95,16.80]],
+    [19,'Värmlandsbataljonen','V','191 I,192 I,193 B,194 B','',8,0,[59.60,13.30]],
+    [20,'Sannahedsbataljonen','V','201 I,202 I,203 B','Pionjär',8,1,[59.20,15.10]],
+    [21,'Upplandsbataljonen','M','211 I,212 I,213 B,214 U','',8,0,[60.05,17.60]],
+    [22,'Västmanlandsbataljonen','M','221 I,222 I,223 B','',8,0,[59.75,16.40]],
+    [23,'Attundalandsbataljonen','M','231 I,232 I,233 B,234 U','',8,0,[59.50,18.05]],
+    [24,'Stockholmsbataljonen','M','241 I,242 I,243 B','',8,0,[59.33,18.05]],
+    [25,'Telgehusbataljonen','M','251 I,252 I,253 B','',8,0,[59.15,17.55]],
+    [26,'Ulvsundabataljonen','M','261 I,262 I,263 B','',8,0,[59.38,17.95]],
+    [27,'Södermanlandsbataljonen','M','271 I,272 I,273 B','Båt',8,0,[58.95,16.70]],
+    [28,'Roslagsbataljonen','M','281 I,282 I,283 B','Båt',8,0,[59.80,18.60]],
+    [29,'Södertörnsbataljonen','M','291 I,292 I,293 B,294 Båt','CBRN',8,0,[59.10,18.20]],
+    [30,'Första livgrenadjärbataljonen','S','301 I,302 I,303 I,304 B,305 B,307 U','',12,0,[58.41,15.62]],
+    [31,'Andra livgrenadjärbataljonen','S','311 I,312 B,313 B','Båt,Båt',4,0,[58.59,16.18]],
+    [32,'Gotlandsbataljonen','G','321 I,322 B,323 B','Båt',4,0,[57.50,18.55]],
+    [33,'Norra Smålandsbataljonen','S','331 I,332 I,333 I,334 B','Pionjär',8,1,[57.67,14.97]],
+    [34,'Kalmarbataljonen','S','341 I,342 I,343 B,344 B','',8,0,[56.95,16.10]],
+    [35,'Kronobergsbataljonen','S','351 I,352 I,353 B,354 U','',8,0,[56.88,14.81]],
+    [36,'Blekinge västra bataljon','S','361 I,362 B,363 B','',4,0,[56.30,14.75]],
+    [37,'Blekinge östra bataljon','S','371 I,372 B,373 Båt','',4,0,[56.30,15.50]],
+    [38,'Västra Skaraborgsbataljonen','V','381 I,382 I,383 B','Trafik',8,0,[58.55,13.20]],
+    [39,'Östra Skaraborgsbataljonen','V','391 I,392 I,393 B','',8,0,[58.20,13.85]],
+    [40,'Bohusbataljonen','V','401 I,402 I,403 I,404 B','Båt',12,0,[58.45,11.90]],
+    [41,'Göteborgs södra bataljon','V','411 I,412 I,413 B,414 U','',8,0,[57.55,12.10]],
+    [42,'Göteborgs norra bataljon','V','421 I,422 I,423 B','CBRN',8,0,[57.95,12.10]],
+    [43,'Göteborgs skärgårdsbataljon','V','431 I,432 I,433 B,434 Båt','',8,0,[57.70,11.85]],
+    [44,'Älvsborgsbataljonen','V','441 I,442 I,443 B','Grk',8,1,[57.72,13.00]],
+    [45,'Hallandsbataljonen','V','451 I,452 I,453 I,454 B','',12,0,[56.80,12.95]],
+    [46,'Södra skånska bataljonen','S','461 I,462 I,463 B','',8,0,[55.60,13.75]],
+    [47,'Malmöhusbataljonen','S','471 I,472 I,473 B','Trafik',8,0,[55.62,13.10]],
+    [48,'Skånska dragonbataljonen','S','481 I,482 I,483 B,484 B,485 U','',8,0,[55.90,13.60]],
+    [49,'Norra skånska bataljonen','S','491 I,492 I,493 B,494 B','Grk',8,1,[56.15,13.85]]
+  ],
+  orter:[['Stockholm',59.33,18.07],['Göteborg',57.71,11.97],['Malmö',55.60,13.00],['Östersund',63.18,14.64],
+         ['Umeå',63.83,20.26],['Luleå',65.58,22.15],['Visby',57.64,18.29]],
+  steg:[                                         // rubriker och texter för steg 0–9 skrivs utifrån den valda soldaten
+    {rubrik:'Soldaten'},{rubrik:'Stridsparet'},{rubrik:'Omgången'},{rubrik:'Gruppen'},{rubrik:'Plutonen'},{rubrik:'Kompaniet'},
+    {rubrik:'Bataljonen'},{rubrik:'Militärregionen'},{rubrik:'Hemvärnet'},
+    {rubrik:'Hemvärnet på kartan', text:'Militärregionerna på sina platser – bataljoner över hela landet.', karta:true},
+    {rubrik:'Inzoomning', text:'', inzoom:true},
+    {kort:true, rubrik:'Allt hänger på den enskilde soldaten',
+     ingress:'Från stridsparet till hela hemvärnet – kedjan håller bara om varje soldat:',
+     punkter:[['Förstår','sin uppgift – och gruppens och plutonens.'],['Tar ansvar','för sin uppgift.'],['Utför','sin uppgift.']],
+     utover:'Utöver:', fot:'… och tusentals saker till som vi förväntar oss att varje soldat bara löser.'},
+    {kort:true, roller:true, rubrik:'Vem gör vad?',
+     ingress:'Runt din soldat finns chefer och funktioner som leder, planerar och tar hand om.',
+     rollkort:[                                  // {grupp} {pluton} {kompani} {tropp} ersätts med antalen
+       {id:'gc',rubrik:'Gruppchefen',text:'Soldatens närmaste chef. Leder gruppen på {grupp} och har koll på var alla är och hur de mår.'},
+       {id:'pl',rubrik:'Plutonsledningen',text:'Plutonchef, stf och några till. Leder plutonens {pluton} – fördelar uppgifterna, planerar dygnet och ser till att grupperna har det de behöver.'},
+       {id:'kl',rubrik:'Kompaniledningen',text:'KC, stf KC, KF med flera. Leder hela kompaniet på {kompani} – planerar övningar och insatser, ser till att människor, utrustning, mat och transporter fungerar och är länken uppåt. KF håller ihop det praktiska: materiel, förnödenheter och administration.'},
+       {id:'tr',rubrik:'Troppen',text:'Stab och samband, sjukvård, pack- och kokgrupp – {tropp} personer som ser till att kompaniet kan ledas, får vård, utrustning och mat.'}
+     ]}
+  ],
+  byteSek:1.5,                                   // sekunder mellan varje byte i Utöver-listan (varannan rad i tur och ordning)
+  baraLoser:[                                   // det soldaten "bara löser" – visas fem i taget, slumpas och byts ut ett i taget (tillägg från Nyström, Nordahl och Alvarsson)
+    'Anpassar klädseln efter verksamhet och väder','Genomför åtgärder före körning','Håller koll på sin stridsparskamrat',
+    'Kontrollerar säkringen','Dricker och äter när tillfälle ges','Påminner sina kamrater',
+    'Laddar batterier till radio och lampor','Packar fordonet','Packar sin utrustning efter packlistan',
+    'Reser tältet','Kommer i tid','Skriver 7S-rapport',
+    'Rapporterar fel och brister direkt','Upprättar infartspost','Byter till torra strumpor och sköter fötterna',
+    'Gräver värnet','Kamouflerar sig själv och sin utrustning','Har koll på sin materiel',
+    'Håller ljud- och ljusdisciplin','Sköter sin hygien','Fyller på vatten innan avmarsch',
+    'Upprätthåller sina vapenkunskaper','Kontrollerar att inget lämnas kvar','Vårdar sitt vapen',
+    'Har sjukvårdsutrustningen där den ska vara','Navigerar med kartan','Frågar när något är oklart',
+    'Löser uppkomna situationer','Hjälper kamraten som har det tungt','Kontrollerar gruppchefens status',
+    'Följer säkerhetsbestämmelserna','Har rätt utrustning för uppgiften','Tankar fordonet innan det behövs',
+    'Tänker utanför boxen','Sover när det går','Kan sin SoldF',
+    'Torkar och vårdar kläder och kängor','Kan sin SoldR Mtrl','Har legitimationen med sig',
+    'Är alltid en händelse ifrån att leda','Kontrollerar sin utrustning före uppgiften','Tillser ett gott stridsvärde utanför övningen',
+    'Pratar inte om verksamheten i sociala medier','Sänder en god bild av hemvärnet','Lämnar tillbaka utrustning i gott skick',
+    'Kollar väderprognosen inför övningen','Planerar ledigheten med arbetsgivare och familj','Svarar på kallelsen och anmäler sig i tid',
+    'Tränar för att orka','Håller skjutprov och utbildningar aktuella','Tar initiativ när läget kräver det',
+    'Tar emot nya kamrater och visar hur det fungerar','Rapporterar skador och tillbud','Plockar upp efter sig på rastplatsen',
+    'Kontrollerar sambandet innan avfärd','Har koll på sin ammunition','Delar med sig av sina kunskaper',
+    'Vapenkontroll (skarp och lös)','Vapenhantering','Posttjänst',
+    'Igelkottsförsvar','SOLO','Personlig sjukvårdsberedskap',
+    'Kamratstöd'
+  ]
+};
+
+// ===================== Organisationen (layouten är densamma vem som än är vald) =====================
+const STEPS=CFG.steg.length;
+const MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches?0.02:1;
+const COLS={own:['#f28c18','#8a4500'],chef:['#7b3fa0','#4d2268'],stf:['#d9579b','#8f2c62'],kf:['#138a8f','#0b5559'],std:['#1f4e9c','#163a75']};
+const MAP=CFG.steg.findIndex(s=>s.karta),ZOOM=CFG.steg.findIndex(s=>s.inzoom),LASTORG=MAP-1;
+const isCard=n=>!!(CFG.steg[n]&&CFG.steg[n].kort),CARDS=CFG.steg.map((s,i)=>i).filter(isCard);
+const BOK=CFG.bokstavering,BT=CFG.bet;
+const P=[],F=[],BATS=[];                          // personer, ramar, bataljonerna
+const PAD=[.42,.8,1.2,1.1,6],RG=1.35;
+const TW=Math.max(...CFG.tropp.grupper)-1,KW=31.5+TW,K4=3*10.5+7;   // troppens bredd; tropp- och fyrplutonskompaniets bredd
+const COLW=KW+7,BWID=COLW+KW+4.6,bH=rows=>32.05+(rows-1)*21;   // bataljonsramens bredd och höjd
+const range=(n,f)=>Array.from({length:n},(_,k)=>f(k));
+// path = [MR, bataljon, kompani ('Bat' för bataljonens plutoner), pluton, grupp ('-' för kompaniledningen), index]
+function box(x0,y0,x1,y1,lvl,path,top){const p=PAD[lvl],f={bx0:x0-p,by0:y0-(top||p),bx1:x1+p,by1:y1+p,lvl,path,label:''};F.push(f);return f}
+function frameBox(f0,...lv){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(let i=f0;i<F.length;i++)if(lv.includes(F[i].lvl)){const f=F[i];x0=Math.min(x0,f.bx0);y0=Math.min(y0,f.by0);x1=Math.max(x1,f.bx1);y1=Math.max(y1,f.by1)}return [x0,y0,x1,y1]}
+function rad(xs,y,path,o,roles){                  // ett led: chef längst till vänster, stf bredvid (om roller)
+  xs.forEach((x,k)=>P.push(Object.assign({bx:x,by:y,path:[...path,k],ri:k,rn:xs.length,blk:k>>2,role:roles?(k===0?'chef':k===1?'stf':''):''},o)));
+}
+const gsOf=kind=>CFG.gruppStorlek[kind]||8;
+function pluton(ox,oy,pth,mob,kind,tag){          // plutonsledning överst, fyra grupper under
+  const n=kind==='I'?(mob==='B'?CFG.plutonsledning.band:CFG.plutonsledning.hjul):CFG.antagenPluton;
+  const gs=gsOf(kind),gx=ox+(8-gs)/2;
+  [...BT.grupper].forEach((g,i)=>{const y=oy+i*RG;rad(range(gs,k=>gx+k),y,[...pth,g],{},true);box(gx,y,gx+gs-1,y,0,[...pth,g])});
+  rad(range(n,k=>ox+3.5+(k-(n-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,pl:true},true);
+  const f=box(ox,oy-1.6,ox+7,oy+3*RG,1,pth);f.mob=mob||null;f.tag=tag||'';f.kind=kind;
+}
+function tropp(ox,oy,pth,mob){                    // ritas som en pluton – en chef i ledningen, gruppchef och stf i varje grupp
+  const T=CFG.tropp;
+  rad(range(T.ledning,k=>ox+TW/2+(k-(T.ledning-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,tr:true},true);
+  T.grupper.forEach((n,g)=>{const y=oy+g*RG,gl=BT.grupper[g];rad(range(n,k=>ox+k),y,[...pth,gl],{tr:true,gnamn:T.namn[g]},true);box(ox,y,ox+n-1,y,0,[...pth,gl])});
+  const f=box(ox,oy-1.6,ox+TW,oy+(T.grupper.length-1)*RG,1,pth);f.tropp=true;f.mob=mob||null;f.kind='T';
+}
+function grupperad(ox,oy,pth,mob,T,tag){           // bataljonens egna delar: chefer överst, namngivna grupper under
+  const L=Array.isArray(T.ledning)?T.ledning:range(T.ledning,()=>''),W=Math.max(...T.grupper,L.length)-1;
+  const p0=P.length;
+  rad(range(L.length,k=>ox+W/2+(k-(L.length-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,pl:true},true);
+  for(let i=p0;i<P.length;i++)if(L[P[i].ri])P[i].tag=L[P[i].ri];
+  const gl=[...BT.grupper,...BT.extraGrupper];
+  T.grupper.forEach((n,g)=>{const y=oy+g*RG;rad(range(n,k=>ox+k),y,[...pth,gl[g]],{gnamn:T.namn[g]},true);box(ox,y,ox+n-1,y,0,[...pth,gl[g]])});
+  const f=box(ox,oy-1.6,ox+W,oy+(T.grupper.length-1)*RG,1,pth);f.mob=mob||null;f.tag=tag||'';f.kind='spec';f.typ=T;
+}
+function kompani(ox,oy,pth,K){                    // tre skytteplutoner + tropp, eller fyra plutoner; + kompaniledning (4 + 4)
+  const np=K.tropp?3:(CFG.plutonerPerKompani[K.typ]||4),W=K.tropp?KW:(np-1)*10.5+7,L=CFG.kompaniledning;
+  for(let p=0;p<np;p++)pluton(ox+p*10.5,oy,[...pth,BT.plutoner[p]],K.mob[p],K.typ,'');
+  if(K.tropp)tropp(ox+31.5,oy,[...pth,BT.tropp],K.mob[3]);
+  const gaps=CFG.klGrupper.length-1,wid=L.length-1+gaps*.9;let k=0;
+  CFG.klGrupper.forEach((n,g)=>{for(let q=0;q<n&&k<L.length;q++,k++)
+    P.push({bx:ox+W/2-wid/2+k+g*.9,by:oy-5.6,path:[...pth,BT.kompaniledning,'-',k],ri:k,rn:L.length,blk:g,led:true,kl:true,role:CFG.roller[L[k]]||'',tag:L[k]})});
+  const f=box(ox,oy-5.6,ox+W,oy+3*RG+1.2,2,pth);f.K=K;f.short=String(K.nr);
+}
+function bataljon(ox,oy,R,D){                     // bataljonens egna plutoner överst, kompanierna i två kolumner under
+  const f0=F.length,p0=P.length,pth=[R.id,D.nr],pw=D.bplut.length*7+(D.bplut.length-1)*3.5;
+  D.bplut.forEach((q,i)=>{const T=CFG.plutonstyper[q.sp],x=ox+(BWID-4.6-pw)/2+i*10.5,pp=[...pth,BT.bataljon,q.bok];
+    if(T)grupperad(x,oy,pp,q.mob,T,q.tag);else pluton(x,oy,pp,q.mob,'spec',q.tag)});
+  D.komp.forEach((K,k)=>{const r=Math.floor(k/2),single=k===D.komp.length-1&&D.komp.length%2===1;
+    kompani(ox+(single?COLW/2:(k%2)*COLW),oy+19+r*21,[...pth,K.nr],K)});
+  const [x0,y0,x1,y1]=frameBox(f0,1,2);
+  const f=box(x0,y0,x1,y1,3,pth,3.1);f.label=`${D.nr}. ${D.namn}`;f.short=D.nr+'.';   // luft ovanför för plutonernas namn
+  BATS.push({p0,p1:P.length,f0,f1:F.length,reg:R.id,ll:D.ll,D});
+}
+// listan → bataljoner med kompanier, bataljonsplutoner och fordon (bandgående först till Grk/pionjär, sedan insatsplutonerna)
+function parseBat([nr,namn,mr,komp,spec,hjul,band,ll]){
+  const K=komp.split(',').map(s=>{const [n,typ]=s.trim().split(/\s+/);return {nr:+n,typ,mob:[],tropp:typ==='I'&&(CFG.troppKompanier==='alla'||CFG.troppKompanier.includes(+n))}});
+  const S=spec?spec.split(',').map(s=>s.trim()):[];
+  if(mr==='N'&&!S.includes('TOLO'))S.push('TOLO');   // TOLO-grupp i bataljonerna i MR N (D HV, H Hvbat 22)
+  const bp=[{tag:'Bataljonsstab',sp:'Stab',mob:null},{tag:'Ledningspluton',sp:'',mob:null},...S.map(sp=>({tag:CFG.plutonsnamn[sp]||sp,sp,mob:sp==='Båt'?'W':null}))];
+  const used=new Set();                           // två plutoner av samma slag får nästa lediga bokstav
+  bp.forEach(q=>{let b=BT.bataljonsplutoner[q.sp]||q.sp.charAt(0).toUpperCase();
+    if(used.has(b))b=[...'ABDFGHIJNORSVWYZ'].find(x=>!used.has(x));used.add(b);q.bok=b});
+  const slots=[];
+  S.forEach((sp,i)=>{if(sp!=='Båt'&&sp!=='TOLO')slots.push({pri:sp==='Grk'||sp==='Pionjär'?0:2,set:m=>bp[i+2].mob=m})});
+  for(const k of K){if(k.typ==='I')for(let p=0;p<4;p++)slots.push({pri:1,set:m=>k.mob[p]=m});else for(let p=0;p<4;p++)k.mob[p]=k.typ==='B'||k.typ==='U'?null:'W'}
+  slots.sort((a,b)=>a.pri-b.pri);let nb=band;for(const s of slots){s.set(nb>0?'B':'H');nb--}
+  return {nr,namn,mr,komp:K,bplut:bp,hjul,band,ll};
+}
+const BDEF=CFG.bataljoner.map(parseBat),RIDX=Object.fromEntries(CFG.regioner.map((r,i)=>[r.id,i]));
+const BMAP=new Map(BDEF.map(d=>[d.nr,d])),KMAP=new Map();
+for(const d of BDEF)for(const k of d.komp)KMAP.set(k.nr,k);
+{ const k=KMAP.get(CFG.egetKompani);if(k){k.typ='I';k.tropp=true;k.mob=[...CFG.egnaPlutoner,'H']} }   // 333 enligt kompaniet självt
+function regionSize(defs){                        // bataljonerna i rader om fyra; radhöjden efter den största bataljonen
+  const cols=Math.min(4,defs.length),rows=[];for(let i=0;i<defs.length;i+=cols)rows.push(defs.slice(i,i+cols));
+  const rh=rows.map(r=>Math.max(...r.map(d=>bH(Math.ceil(d.komp.length/2)))));
+  return {rows,rh,w:cols*(BWID+10)-10,h:rh.reduce((a,b)=>a+b,0)+(rows.length-1)*40};
+}
+function region(R,ox,oy,L,n){
+  const f0=F.length;let y=oy;
+  L.rows.forEach((row,r)=>{const rw=row.length*(BWID+10)-10;
+    row.forEach((D,i)=>bataljon(ox+(L.w-rw)/2+i*(BWID+10)+2.3,y+5.5,R,D));
+    y+=L.rh[r]+40});
+  const [x0,y0,x1,y1]=frameBox(f0,3);
+  const f=box(x0,y0,x1,y1,4,[R.id],40);f.label=`${R.namn} · ${n} bataljon${n===1?'':'er'}`;   // luft ovanför för || och bataljonsnummer
+}
+{ let y=0;                                        // regionerna i rader: N överst, V och M i mitten, S och P 18 nederst
+  for(const ids of CFG.orgRader){
+    const items=ids.map(id=>({R:CFG.regioner[RIDX[id]],defs:BDEF.filter(d=>d.mr===id)})).filter(o=>o.R&&o.defs.length).map(o=>({...o,L:regionSize(o.defs)}));
+    if(!items.length)continue;
+    let x=-(items.reduce((a,o)=>a+o.L.w,0)+(items.length-1)*60)/2;
+    for(const o of items){region(o.R,x,y,o.L,o.defs.length);x+=o.L.w+60}
+    y+=Math.max(...items.map(o=>o.L.h))+90;
+  }
+}
+// enheternas mitt och storlek (för hur nya enheter glider in, och för uträkningarna)
+const CEN=new Map(),FK=new Map();
+for(const p of P)for(let L=1;L<=5;L++){const k=p.path.slice(0,L).join('|');let c=CEN.get(k);if(!c)CEN.set(k,c=[1e9,1e9,-1e9,-1e9,0]);
+  c[0]=Math.min(c[0],p.bx);c[1]=Math.min(c[1],p.by);c[2]=Math.max(c[2],p.bx);c[3]=Math.max(c[3],p.by);c[4]++}
+for(const f of F)if(f.lvl===1)FK.set(f.path.join('|'),f);
+const sizeOf=path=>(CEN.get(path.join('|'))||[0,0,0,0,0])[4];
+
+// ===================== Beteckningar och sökning =====================
+const pad2=n=>String(n).padStart(2,'0');
+const regOf=id=>CFG.regioner[RIDX[id]];
+const isPre=(a,b)=>a.length<=b.length&&a.every((v,i)=>v===b[i]);
+const AN=CFG.anrop||{},sig=(a,b)=>a&&b?(BOK[a]||a)+(BOK[b]||b):null;
+function batEgen(b){const x=AN.visa&&AN.bataljoner&&AN.bataljoner[b];return x?x.charAt(x.length-1):null}
+function anropBat(b){const x=AN.visa&&AN.bataljoner&&AN.bataljoner[b];return x&&x.length>1?sig(x.charAt(0),x.charAt(1)):null}
+function kompEgen(kg){if(!AN.visa)return null;if(AN.kompanier&&AN.kompanier[kg])return AN.kompanier[kg].charAt(0);
+  const K=KMAP.get(kg),D=K&&BDEF.find(d=>d.komp.includes(K)),i=D?[...D.komp].sort((a,b)=>a.nr-b.nr).indexOf(K):-1;
+  return i>=0?(AN.kompanibokstaver||'').charAt(i)||null:null}
+function anropKomp(b,kg){return sigP(kompPar(b,kg))}
+const BPSP=new Map(),BPDUP=new Set();for(const d of BDEF){const sett=new Set();for(const q of d.bplut){BPSP.set(d.nr+'|'+q.bok,q.sp);if(sett.has(q.sp))BPDUP.add(d.nr+'|'+q.bok);sett.add(q.sp)}}
+const sigP=pr=>pr&&pr[0]&&pr[1]?(BOK[pr[0]]||pr[0])+(BOK[pr[1]]||pr[1]):null;
+function batPar(b){const x=AN.visa&&AN.bataljoner&&AN.bataljoner[b];return x&&x.length>1?[x.charAt(0),x.charAt(1)]:null}
+function kompPar(b,kg){const x=AN.visa&&AN.kompanier&&AN.kompanier[kg];if(x&&x.length>1)return [x.charAt(0),x.charAt(1)];const k=kompEgen(kg),e=batEgen(b);return k&&e?[k,e]:null}
+function enhetPar(path){                          // två bokstäver för pluton/tropp/bataljonsdel, eller kompaniet för kompaniledningen
+  const [r,b,kg,u]=path;if(!AN.visa)return null;
+  if(kg===BT.bataljon){const rule=(AN.bataljonsdelar||{})[BPSP.get(b+'|'+u)];if(!rule)return null;
+    if(rule==='=')return batPar(b);
+    const y=rule.charAt(1)==='*'?batEgen(b):rule.charAt(1)==='#'?(AN.rsBokstav||{})[r]:rule.charAt(1);
+    return y?[BPDUP.has(b+'|'+u)?'W':rule.charAt(0),y]:null}   // en andra del av samma slag får reservbokstaven W
+  if(u===BT.kompaniledning)return kompPar(b,kg);
+  const k=kompEgen(kg);return k?[u,k]:null;
+}
+function gruppPar(path){                          // grupp/tropp: egen bokstav + plutonens första bokstav
+  const [,b,kg,u,row]=path;if(row==='-'||row===BT.plutonsledning)return null;
+  const e=enhetPar(path);if(!e)return null;
+  if(kg===BT.bataljon){const sp=BPSP.get(b+'|'+u);if(sp==='Stab')return null;
+    if(sp===''){const i=[...BT.grupper,...BT.extraGrupper].indexOf(row);return [(AN.ledningspluton||[])[i]||row,e[0]]}}
+  return [row,e[0]];
+}
+function anropEnhet(path){return sigP(enhetPar(path))}                       // BertilSigurd
+function anropLed(path){return sigP(gruppPar(path))}                         // ErikBertil
+function anropNr(p){                              // befattningsnummer efter signalen (FAL-A 1.4.3 och 4.4.6)
+  const [,b,kg,u,row,i]=p.path;
+  if(kg===BT.bataljon&&BPSP.get(b+'|'+u)==='Stab'){
+    if(row===BT.plutonsledning)return [1,2,4][i]||5+i;                      // BC 1, stf BC 2, BF 4
+    const g=[...BT.grupper,...BT.extraGrupper].indexOf(row);return [11,21,31,41,61][g]+i}   // S1 11–, S2 21–, S3/5 31–, S4 41–, S6 61–
+  if(p.kl)return [1,2,4,5,6,7,8,9][i]||i+1;                                 // KC 1, stf KC 2, KF 4, övriga 5–9
+  if(row===BT.plutonsledning)return i<3?i+1:11+(i-3);                        // chef 1, stf 2, stf 2 3, specialsoldater 11, 12 …
+  return i+1;                                                                // gruppchef 1, stf 2, soldater 3, 4 …
+}
+function anrop(p){                                // t.ex. ErikBertil 5
+  const [,b,kg,u,row]=p.path;
+  const bas=kg===BT.bataljon&&BPSP.get(b+'|'+u)==='Stab'?sigP(batPar(b)):(row==='-'||row===BT.plutonsledning)?anropEnhet(p.path):anropLed(p.path);
+  return bas?bas+' '+anropNr(p):null;
+}
+function anropId(p){                              // identifieringsbeteckning (FAL-A 1.1): signalen + kompaniets, t.ex. EBSM5
+  const a=anrop(p);if(!a)return null;const [,b,kg]=p.path,k=kg===BT.bataljon?batPar(b):kompPar(b,kg);
+  const kort=x=>x.replace(/[a-zåäö]/g,'');return kort(a.split(' ')[0])+(k?k.join(''):'')+a.split(' ')[1];
+}
+function anropFull(p){                            // fullständigt anrop uppifrån, t.ex. [MR S] ViktorMartin SigurdMartin AdamSigurd ErikAdam 1
+  if(!anrop(p))return null;const [r,b,kg]=p.path,x=(AN.regioner||{})[r];
+  const mr=x&&x.length>1?sigP([x.charAt(0),x.charAt(1)]):'['+regOf(r).namn+']';
+  const d=[mr,anropBat(b),kg===BT.bataljon?null:anropKomp(b,kg),anropEnhet(p.path),anropLed(p.path)].filter(Boolean);
+  return d.filter((v,i)=>v!==d[i-1]).join(' ')+' '+anropNr(p);
+}
+function betText(p){const [r,b,kg,u,row,i]=p.path;
+  return [regOf(r).namn,b,kg,anropEnhet(p.path)||BOK[u]||u,row==='-'||row===BT.plutonsledning?null:(anropLed(p.path)||BOK[row]||row),pad2(i+1)].filter(v=>v!==null).join(' · ')}
+function betKod(p){const [,b,kg,u,row,i]=p.path;return [b,kg,u,row==='-'?null:row,pad2(i+1)].filter(v=>v!==null).join('-')}
+function befattning(p){
+  if(p.kl)return ({KC:'Kompanichef','stf KC':'Stf kompanichef',KF:'Kompaniförvaltare'})[p.tag]||'Kompaniledningen';
+  if(p.tr&&p.led)return 'Troppchef';
+  if(p.tag&&p.path[2]===BT.bataljon)return ({BC:'Bataljonschef','stf BC':'Stf bataljonschef',BF:'Bataljonsförvaltare'})[p.tag]||p.tag;
+  if(p.led&&p.path[2]===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));if(f&&f.typ)return (p.role==='chef'?'Chef':p.role==='stf'?'Stf chef':'Chefsgruppen')+' · '+f.tag}
+  if(p.led)return p.role==='chef'?'Plutonchef':p.role==='stf'?'Stf plutonchef':'Plutonsledningen';
+  return (p.role==='chef'?'Gruppchef':p.role==='stf'?'Stf gruppchef':'Soldat')+(p.gnamn?' · '+p.gnamn:'');
+}
+function kompNamn(K){return `${K.nr}. ${CFG.kompaninamn[K.typ]||K.typ}`}
+function medAnrop(txt,a){return a?`${txt} (${a})`:txt}
+function enhetNamn(p){
+  const [r,b,kg,u]=p.path,D=BMAP.get(b);
+  if(kg===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));return `${f.tag} · ${D.nr}. ${D.namn}`}
+  const K=KMAP.get(kg),aE=anropEnhet(p.path),del=p.kl?'Kompaniledningen':p.tr?medAnrop('Troppen',aE):`Pluton ${aE||BOK[u]||u}`;
+  return `${del} · ${medAnrop(kompNamn(K),anropKomp(b,kg))} · ${D.nr}. ${D.namn}`;
+}
+const KOD=new Map();for(const p of P)KOD.set(betKod(p).toLowerCase(),p);
+function tokens(p){
+  if(p.tok)return p.tok;
+  const [r,b,kg,u,row,i]=p.path,t=[String(b),String(kg).toLowerCase(),u.toLowerCase(),(BOK[u]||'').toLowerCase(),pad2(i+1),String(i+1),r.toLowerCase()];
+  if(row!=='-')t.push(row.toLowerCase(),(BOK[row]||'').toLowerCase());
+  for(const a of [anropLed(p.path),anropEnhet(p.path),anropKomp(b,kg),anropBat(b)])if(a){t.push(a.toLowerCase(),a.replace(/[^A-ZÅÄÖ]/g,'').toLowerCase())}
+  {const a=anrop(p),id=anropId(p);if(a)t.push(String(anropNr(p)));if(id)t.push(id.toLowerCase(),id.replace(/[0-9]/g,'').toLowerCase())}
+  for(const w of (befattning(p)+' '+(p.tag||'')).toLowerCase().split(/[\s·]+/))if(w)t.push(w);
+  if(kg===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));for(const w of f.tag.toLowerCase().split(/[\s-]+/))t.push(w)}
+  return p.tok=t.filter(Boolean);
+}
+function sok(q){
+  const ord=(q.toLowerCase().replace(/[·.,\/]/g,' ').match(/[0-9]+|[a-zåäö]+/g)||[]).filter(w=>w!=='mr');
+  if(!ord.length)return [];
+  const direkt=KOD.get(q.trim().toLowerCase().replace(/[\s·]+/g,'-'));
+  const out=[];
+  for(const p of P){let sc=0,ok=true;const t=tokens(p);
+    for(const w of ord){let m=0;
+      for(const k of t){if(k===w){m=2;break}if(w.length>=2&&isNaN(w)&&k.startsWith(w))m=1}
+      if(!m){ok=false;break}sc+=m}
+    if(ok)out.push([sc+(p===direkt?99:0),p]);
+  }
+  out.sort((a,b)=>b[0]-a[0]);
+  return out.slice(0,60).map(x=>x[1]);
+}
+
+// ===================== Söksidan =====================
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const q=$('q'),list=$('list'),status=$('status'),empty=$('empty');
+const EGET=String(CFG.egetKompani);
+let timer=null,openEl=null,harPres=false;
+
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function dd(dl,label,val,big){if(!val)return;const t=el('dt',null,label),d=el('dd',big?'big':null,val);dl.append(t,d)}
+
+function kort(p){
+  const [r,b,kg]=p.path,an=anrop(p),id=anropId(p),li=el('li','hit');
+  const btn=el('button');btn.type='button';btn.setAttribute('aria-expanded','false');
+  const top=el('div','an');top.appendChild(el('b',null,an||betText(p)));if(id)top.appendChild(el('span',null,id));
+  if(String(kg)===EGET)top.appendChild(el('span','badge',EGET));
+  btn.append(top,el('div','bef',befattning(p)),el('div','enh',enhetNamn(p)));
+  const det=el('div','det'),dl=el('dl');
+  dd(dl,'Anrop',an,true);dd(dl,'Ident',id);dd(dl,'Fullständigt',anropFull(p));dd(dl,'Befattning',befattning(p));dd(dl,'Enhet',enhetNamn(p));
+  dd(dl,'Kompani',anropKomp(b,kg));dd(dl,'Bataljon',anropBat(b));dd(dl,'Beteckning',betText(p));dd(dl,'Kod',betKod(p));
+  const row=el('div','row'),kop=el('button','btn',an?'Kopiera anrop':'Kopiera kod');kop.type='button';
+  kop.onclick=()=>{const t=an||betKod(p);try{navigator.clipboard.writeText(t).then(()=>{kop.textContent='Kopierat!';setTimeout(()=>kop.textContent=an?'Kopiera anrop':'Kopiera kod',1500)})}catch(e){}};
+  const pres=el('a','btn primary','Visa i presentationen');pres.href='presentation.html#1/'+betKod(p);pres.hidden=!harPres;pres.dataset.pres='1';
+  row.append(kop,pres);det.append(dl,row);
+  btn.onclick=()=>{const on=!li.classList.contains('open');if(openEl&&openEl!==li){openEl.classList.remove('open');openEl.firstChild.setAttribute('aria-expanded','false')}
+    li.classList.toggle('open',on);btn.setAttribute('aria-expanded',String(on));openEl=on?li:null};
+  li.append(btn,det);return li;
+}
+function kor(){
+  const s=q.value.trim();list.innerHTML='';openEl=null;
+  try{history.replaceState(null,'',s?'#'+encodeURIComponent(s):location.pathname)}catch(e){}
+  if(!s){status.textContent='';empty.hidden=false;return}
+  empty.hidden=true;
+  const own=p=>String(p.path[2])===EGET?0:String(p.path[1])===EGET.slice(0,2)?1:2;
+  const hits=sok(s).map((p,i)=>[p,i]).sort((a,b)=>own(a[0])-own(b[0])||a[1]-b[1]).map(x=>x[0]);   // egna kompaniet först, sedan egna bataljonen
+  status.textContent=!hits.length?'Inga träffar. Pröva färre ord.':hits.length>=60?'Visar de 60 bästa träffarna. Lägg till fler ord för att smalna av.':hits.length+(hits.length===1?' träff':' träffar');
+  const frag=document.createDocumentFragment();hits.forEach(p=>frag.appendChild(kort(p)));list.appendChild(frag);
+  if(hits.length===1)list.firstChild.firstChild.click();
+}
+q.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(kor,150)});
+q.addEventListener('keydown',e=>{if(e.key==='Enter'){clearTimeout(timer);kor();q.blur()}});
+$('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;q.value=b.dataset.q;kor()});
+
+// länken till presentationen visas bara när den finns i repot
+try{fetch('presentation.html',{method:'HEAD',cache:'no-store'}).then(r=>{harPres=r.ok;document.querySelectorAll('[data-pres]').forEach(a=>a.hidden=!harPres)},()=>{})}catch(e){}
+
+const start=decodeURIComponent(location.hash.slice(1));
+if(start){q.value=start;kor()}
+})();
+</script>
+</body>
+</html>
