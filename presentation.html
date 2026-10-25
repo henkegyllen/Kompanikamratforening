@@ -1,161 +1,122 @@
 <!doctype html>
-<html lang="sv">
+<!-- VISA: ändra 0 till 1 på raden nedan när presentationen ska synas -->
+<html lang="sv" data-visa="0">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2c3a2f">
+<meta name="color-scheme" content="only light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
 <title>Från soldat till hemvärnet</title>
-<!--
-  Bild 0 (inställningar): sök fram en soldat eller klicka i översikten (scrolla = zooma, dra = flytta, nyp på pekskärm).
-  Den valda soldaten blir "din soldat" och hela presentationen byggs runt den.
-  Del 1 (vitt kort): soldat → stridspar → omgång → grupp → pluton → kompani → bataljon → militärregion → hela hemvärnet.
-  Del 2 (karta): bataljonerna glider ut till sina platser i Sverige – sedan zoomar vi in igen, ända ner till soldaten.
-  Bläddra med piltangenterna, PageUp/PageDown (fjärrklicker), mellanslag eller knapparna. Home/End = första/sista.
-  Adressen sparar bild och soldat, t.ex. #1/33-333-B-E-05 (bataljon-kompani-pluton-grupp-nummer).
-  Beteckningar, antal, roller och texter ställs in i CFG i skriptet. Sverigekartan är förenklad och ungefärlig.
--->
 <style>
-  :root{
-    --bg:#2c3a2f;--panel:#3b4a3e;--panel2:#46574a;--text:#f2f0e7;--muted:#d8d4c4;
-    --yellow:#c9bb3e;--ink:#1f2a20;--line:rgba(216,212,196,.3);--own:#d4a017;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
-  body{background:var(--bg);color:var(--text);font-family:"Barlow Condensed",system-ui,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
-  h1,h2,h3,h4,.eyebrow{font-family:"Oswald",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.02em}
-  #map{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:pan-y}
-
-  .cap{position:fixed;left:32px;top:28px;width:min(600px,calc(100vw - 64px));background:var(--panel);color:var(--text);
-    border-radius:14px;padding:16px 20px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:opacity .35s ease}
-  .eyebrow{font-size:.8rem;font-weight:600;letter-spacing:.12em;color:var(--yellow)}
-  .cap h1{font-size:clamp(1.6rem,2.4vw,2.3rem);line-height:1.08;margin-top:2px}
-  .count{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;margin-top:6px}
-  .num{font-family:"Oswald",sans-serif;font-size:clamp(2rem,3vw,2.8rem);font-weight:700;color:var(--yellow);font-variant-numeric:tabular-nums;line-height:1}
-  .what{font-weight:700;font-size:1.15rem}
-  .calc{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
-  .cap p{margin-top:6px;line-height:1.35;color:var(--muted);font-size:1.1rem;font-weight:500}
-  .fade{transition:opacity .2s ease}
-  .cap.swap .fade{opacity:0}
-
-  .kort{position:fixed;right:32px;top:calc(50% - 30px);width:min(720px,58vw);max-height:calc(100vh - 180px);overflow:auto;background:var(--panel);color:var(--text);
-    border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.35);padding:36px 44px 30px;
-    opacity:0;transform:translate(40px,-50%);pointer-events:none;transition:opacity .5s ease,transform .5s ease}
-  .kort.on{opacity:1;transform:translate(0,-50%);pointer-events:auto}
-  .kort h2{font-size:clamp(1.7rem,2.6vw,2.4rem);line-height:1.08;margin:4px 0 10px}
-  .kort .ingress{font-size:1.2rem;line-height:1.4;color:var(--muted);font-weight:500;margin-bottom:18px}
-  .kort ol{list-style:none;counter-reset:p;display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
-  .kort ol li{counter-increment:p;position:relative;padding-left:46px;font-size:1.3rem;line-height:1.35;font-weight:500}
-  .kort ol li::before{content:counter(p);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--yellow);
-    color:var(--ink);font-family:"Oswald",sans-serif;font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:center}
-  .kort ol li b{color:var(--yellow);font-weight:700}
-  .kort .utover{border-top:2px solid var(--line);padding-top:16px}
-  .kort .utover h3{font-size:1rem;letter-spacing:.08em;color:var(--yellow);margin-bottom:10px}
-  .kort .utover ul{list-style:none;display:flex;flex-direction:column;gap:8px}
-  .kort .utover li{position:relative;padding-left:24px;font-size:1.2rem;line-height:1.35;font-weight:500;transition:opacity .45s ease,transform .45s ease}
-  .kort .utover li::before{content:'';position:absolute;left:4px;top:.5em;width:10px;height:10px;border-radius:2px;background:var(--yellow)}
-  .kort .utover li.ut{opacity:0;transform:translateX(18px)}
-  .kort [hidden]{display:none!important}
-  .kort .roller{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .kort .roll{background:var(--panel2);border:2px solid transparent;border-radius:12px;padding:12px 14px;cursor:pointer;transition:background .35s ease,border-color .35s ease}
-  .kort .roll h4{display:flex;align-items:center;gap:8px;font-size:1.1rem;margin-bottom:4px}
-  .kort .roll canvas{width:28px;height:24px;flex:none;background:#f6f4ec;border-radius:6px}
-  .kort .roll p{font-size:1.05rem;line-height:1.35;color:var(--muted);font-weight:500}
-  .kort .roll.aktiv{border-color:var(--yellow);background:#4c5d47}
-  .kort .nastaRoll{display:inline-flex;align-items:center;min-height:46px;margin-top:16px;font:inherit;font-size:1.1rem;font-weight:700;color:var(--ink);background:var(--yellow);border:0;border-radius:12px;padding:8px 18px;cursor:pointer}
-  .kort .fot{margin-top:14px;font-size:1.05rem;color:var(--muted);font-style:italic}
-  .cap.gone,.legend.gone{opacity:0;pointer-events:none}
-  .legend{position:fixed;left:32px;bottom:26px;max-width:calc(100vw - 560px);display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
-    background:var(--panel);border-radius:12px;padding:7px 14px;font-size:.98rem;font-weight:600;color:var(--text);transition:opacity .35s ease}
-  .legend .it{display:flex;align-items:center;gap:6px}
-  .legend [hidden]{display:none!important}
-  .legend canvas{width:28px;height:24px;background:#f6f4ec;border-radius:6px}
-  .legend .ech{font-weight:700;color:var(--yellow);letter-spacing:.08em;min-width:16px;text-align:center}
-  .legend .sep{width:2px;height:18px;background:var(--line)}
-
-  .nav{position:fixed;right:28px;bottom:26px;display:flex;align-items:center;gap:8px;background:var(--panel);
-    border-radius:14px;padding:6px 8px;z-index:2;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .nav button,.nav a{font:inherit;font-size:1.05rem;font-weight:700;color:var(--text);background:transparent;border:2px solid var(--line);
-    border-radius:10px;padding:6px 12px;cursor:pointer;min-height:42px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
-  .nav button:hover,.nav a:hover{background:var(--panel2)}
-  .nav #next{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
-  .nav button:disabled{opacity:.35;cursor:default}
-  .nav svg{width:20px;height:20px}
-  .dots{display:flex;gap:6px}
-  .dots button{width:10px;height:10px;min-height:0;border-radius:50%;background:rgba(216,212,196,.35);border:0;padding:0}
-  .dots button.on{background:var(--yellow)}
-  .pg{font-size:1rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
-
-  /* bild 0: inställningar */
-  .setup{position:fixed;left:32px;top:28px;width:min(400px,calc(100vw - 64px));max-height:calc(100vh - 110px);display:none;flex-direction:column;
-    background:var(--panel);color:var(--text);border-radius:14px;padding:16px 18px 14px;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:3}
-  body.inst .setup{display:flex}
-  body.inst .cap,body.inst .legend,body.inst .kort{opacity:0;pointer-events:none}
-  body.inst #map{cursor:grab;touch-action:none}
-  body.inst #map.drag{cursor:grabbing}
-  body.inst #map.peka{cursor:pointer}
-  .setup h1{font-size:1.7rem;line-height:1.05;margin:2px 0 10px}
-  .setup input{width:100%;font:inherit;font-size:1.15rem;min-height:48px;padding:8px 12px;border:2px solid var(--muted);border-radius:12px;background:var(--panel2);color:var(--text)}
-  .setup input::placeholder{color:#c3bfae}
-  .setup input:focus{outline:3px solid var(--yellow);outline-offset:1px}
-  .traffar{list-style:none;margin-top:6px;overflow:auto;min-height:0;flex:0 1 auto;display:flex;flex-direction:column;gap:2px}
-  .traffar li{padding:8px 10px;border-radius:10px;cursor:pointer;font-size:1.05rem;line-height:1.25;font-weight:600}
-  .traffar li span{display:block;color:var(--muted);font-size:.95rem;font-weight:500}
-  .traffar li.on,.traffar li:hover{background:var(--panel2)}
-  .traffar li.ingen{color:var(--muted);cursor:default;background:none}
-  .vald{margin-top:10px;border-top:2px solid var(--line);padding-top:10px;flex:none}
-  .vald .lbl{font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .vald .bet{font-family:"Oswald",sans-serif;font-weight:600;color:var(--yellow);font-size:1.25rem;margin-top:2px}
-  .vald .bef{font-weight:700;font-size:1.1rem;margin-top:2px}
-  .vald .enh{color:var(--muted);font-size:1rem;margin-top:2px;line-height:1.3}
-  .vald .full{font-size:.95rem;font-weight:700;margin-top:4px;line-height:1.3;color:var(--text)}
-  .vald .full:empty{display:none}
-  .setup .hint{color:var(--muted);font-size:1rem;margin-top:10px;line-height:1.3;flex:none}
-  .setup .starta{margin-top:12px;font:inherit;font-size:1.2rem;font-weight:700;min-height:50px;color:var(--ink);background:var(--yellow);border:0;border-radius:12px;padding:10px 16px;cursor:pointer;flex:none}
-  .tip{position:fixed;left:0;top:0;pointer-events:none;background:var(--ink);color:var(--text);font-size:1rem;line-height:1.3;padding:6px 9px;border-radius:8px;
-    opacity:0;transition:opacity .12s;z-index:4;white-space:nowrap}
-  .tip b{color:var(--yellow)}
-  .tip.on{opacity:1}
-  .svep{display:none}
-
-  @media (max-width:760px){
-    .legend{display:none}
-    .cap{left:10px;right:10px;top:10px;width:auto;padding:10px 14px 10px;border-radius:12px}
-    .eyebrow{font-size:.72rem}
-    .cap h1{font-size:1.45rem}
-    .num{font-size:1.9rem}
-    .what{font-size:1.05rem}
-    .cap p{font-size:1rem;margin-top:4px}
-    .nav{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));display:grid;grid-template-columns:48px 48px 48px 1fr 1.6fr;gap:6px;padding:6px}
-    .nav .dots{display:none}
-    .nav button,.nav a{min-height:48px;padding:4px 6px}
-    .nav .lang{display:none}
-    .kort{left:10px;right:10px;top:auto;bottom:calc(76px + env(safe-area-inset-bottom));width:auto;max-height:calc(66vh - 92px);padding:18px 18px 16px;
-      border-radius:14px;transform:translateY(30px)}
-    .kort.on{transform:translateY(0)}
-    .kort h2{font-size:1.5rem}
-    .kort .ingress{font-size:1.05rem;margin-bottom:12px}
-    .kort ol{gap:8px;margin-bottom:14px}
-    .kort ol li{font-size:1.12rem;padding-left:40px}
-    .kort ol li::before{width:28px;height:28px;font-size:.9rem}
-    .kort .utover li{font-size:1.05rem}
-    .kort .roller{grid-template-columns:1fr;gap:8px}
-    .kort .roll{padding:10px 12px}
-    .kort .roll p{font-size:1rem}
-    .setup{left:10px;right:10px;top:10px;width:auto;max-height:54vh;padding:12px 14px}
-    .setup h1{font-size:1.35rem;margin-bottom:8px}
-    .setup .hint{display:none}
-    .setup .starta{margin-top:10px}
-    .svep{display:block;position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:1;
-      background:rgba(31,42,32,.85);color:var(--text);font-weight:700;font-size:.95rem;padding:6px 12px;border-radius:999px;pointer-events:none;
-      opacity:0;transition:opacity .4s ease}
-    .svep.on{opacity:1}
-  }
+:root{
+--bg:#2c3a2f;--panel:#3b4a3e;--panel2:#46574a;--text:#f2f0e7;--muted:#d8d4c4;
+--yellow:#c9bb3e;--ink:#1f2a20;--line:rgba(216,212,196,.3);--own:#d4a017;
+}
+:root{color-scheme:only light}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:"Barlow Condensed",system-ui,sans-serif;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+h1,h2,h3,h4,.eyebrow{font-family:"Oswald",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.02em}
+#map{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:pan-y}
+.cap{position:fixed;left:32px;top:28px;width:min(600px,calc(100vw - 64px));background:var(--panel);color:var(--text);
+border-radius:14px;padding:16px 20px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:opacity .35s ease}
+.eyebrow{font-size:.8rem;font-weight:600;letter-spacing:.12em;color:var(--yellow)}
+.cap h1{font-size:clamp(1.6rem,2.4vw,2.3rem);line-height:1.08;margin-top:2px}
+.count{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;margin-top:6px}
+.num{font-family:"Oswald",sans-serif;font-size:clamp(2rem,3vw,2.8rem);font-weight:700;color:var(--yellow);font-variant-numeric:tabular-nums;line-height:1}
+.what{font-weight:700;font-size:1.15rem}
+.calc{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
+.cap p{margin-top:6px;line-height:1.35;color:var(--muted);font-size:1.1rem;font-weight:500}
+.fade{transition:opacity .2s ease}
+.cap.swap .fade{opacity:0}
+.kort{position:fixed;right:32px;top:calc(50% - 30px);width:min(720px,58vw);max-height:calc(100vh - 180px);overflow:auto;background:var(--panel);color:var(--text);
+border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.35);padding:36px 44px 30px;
+opacity:0;transform:translate(40px,-50%);pointer-events:none;transition:opacity .5s ease,transform .5s ease}
+.kort.on{opacity:1;transform:translate(0,-50%);pointer-events:auto}
+.kort h2{font-size:clamp(1.7rem,2.6vw,2.4rem);line-height:1.08;margin:4px 0 10px}
+.kort .ingress{font-size:1.2rem;line-height:1.4;color:var(--muted);font-weight:500;margin-bottom:18px}
+.kort ol{list-style:none;counter-reset:p;display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.kort ol li{counter-increment:p;position:relative;padding-left:46px;font-size:1.3rem;line-height:1.35;font-weight:500}
+.kort ol li::before{content:counter(p);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--yellow);
+color:var(--ink);font-family:"Oswald",sans-serif;font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:center}
+.kort ol li b{color:var(--yellow);font-weight:700}
+.kort .utover{border-top:2px solid var(--line);padding-top:16px}
+.kort .utover h3{font-size:1rem;letter-spacing:.08em;color:var(--yellow);margin-bottom:10px}
+.kort .utover ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.kort .utover li{position:relative;padding-left:24px;font-size:1.2rem;line-height:1.35;font-weight:500;transition:opacity .45s ease,transform .45s ease}
+.kort .utover li::before{content:'';position:absolute;left:4px;top:.5em;width:10px;height:10px;border-radius:2px;background:var(--yellow)}
+.kort .utover li.ut{opacity:0;transform:translateX(18px)}
+.kort [hidden]{display:none!important}
+.kort .roller{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kort .roll{background:var(--panel2);border:2px solid transparent;border-radius:12px;padding:12px 14px;cursor:pointer;transition:background .35s ease,border-color .35s ease}
+.kort .roll h4{display:flex;align-items:center;gap:8px;font-size:1.1rem;margin-bottom:4px}
+.kort .roll canvas{width:28px;height:24px;flex:none;background:#f6f4ec;border-radius:6px}
+.kort .roll p{font-size:1.05rem;line-height:1.35;color:var(--muted);font-weight:500}
+.kort .roll.aktiv{border-color:var(--yellow);background:#4c5d47}
+.kort .nastaRoll{display:inline-flex;align-items:center;min-height:46px;margin-top:16px;font:inherit;font-size:1.1rem;font-weight:700;color:var(--ink);background:var(--yellow);border:0;border-radius:12px;padding:8px 18px;cursor:pointer}
+.kort .fot{margin-top:14px;font-size:1.05rem;color:var(--muted);font-style:italic}
+.cap.gone,.legend.gone{opacity:0;pointer-events:none}
+.legend{position:fixed;left:32px;bottom:26px;max-width:calc(100vw - 560px);display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
+background:var(--panel);border-radius:12px;padding:7px 14px;font-size:.98rem;font-weight:600;color:var(--text);transition:opacity .35s ease}
+.legend .it{display:flex;align-items:center;gap:6px}
+.legend [hidden]{display:none!important}
+.legend canvas{width:28px;height:24px;background:#f6f4ec;border-radius:6px}
+.legend .ech{font-weight:700;color:var(--yellow);letter-spacing:.08em;min-width:16px;text-align:center}
+.legend .sep{width:2px;height:18px;background:var(--line)}
+.nav{position:fixed;right:28px;bottom:26px;display:flex;align-items:center;gap:8px;background:var(--panel);
+border-radius:14px;padding:6px 8px;z-index:2;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.nav button,.nav a{font:inherit;font-size:1.05rem;font-weight:700;color:var(--text);background:transparent;border:2px solid var(--line);
+border-radius:10px;padding:6px 12px;cursor:pointer;min-height:42px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.nav button:hover,.nav a:hover{background:var(--panel2)}
+.nav #next{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+.nav button:disabled{opacity:.35;cursor:default}
+.nav svg{width:20px;height:20px}
+.dots{display:flex;gap:6px}
+.dots button{width:10px;height:10px;min-height:0;border-radius:50%;background:rgba(216,212,196,.35);border:0;padding:0}
+.dots button.on{background:var(--yellow)}
+.pg{font-size:1rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
+.svep{display:none}
+#las{display:none}
+html:not([data-visa="1"]) body>*{display:none!important}
+html:not([data-visa="1"]) body>#las{display:flex!important;position:fixed;inset:0;align-items:center;justify-content:center;text-align:center;padding:24px}
+#las h1{font-size:2rem}#las p{font-size:1.3rem;color:var(--muted);margin:8px 0 22px}
+#las a{display:inline-flex;align-items:center;min-height:52px;padding:10px 20px;border-radius:12px;background:var(--yellow);color:var(--ink);font-weight:700;font-size:1.2rem;text-decoration:none}
+@media (max-width:760px){
+.legend{display:none}
+.cap{left:10px;right:10px;top:10px;width:auto;padding:10px 14px 10px;border-radius:12px}
+.eyebrow{font-size:.72rem}
+.cap h1{font-size:1.45rem}
+.num{font-size:1.9rem}
+.what{font-size:1.05rem}
+.cap p{font-size:1rem;margin-top:4px}
+.nav{left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));display:grid;grid-template-columns:48px 48px 1fr 1.6fr;gap:6px;padding:6px}
+.nav .dots{display:none}
+.nav button,.nav a{min-height:48px;padding:4px 6px}
+.nav .lang{display:none}
+.kort{left:10px;right:10px;top:auto;bottom:calc(76px + env(safe-area-inset-bottom));width:auto;max-height:calc(66vh - 92px);padding:18px 18px 16px;
+border-radius:14px;transform:translateY(30px)}
+.kort.on{transform:translateY(0)}
+.kort h2{font-size:1.5rem}
+.kort .ingress{font-size:1.05rem;margin-bottom:12px}
+.kort ol{gap:8px;margin-bottom:14px}
+.kort ol li{font-size:1.12rem;padding-left:40px}
+.kort ol li::before{width:28px;height:28px;font-size:.9rem}
+.kort .utover li{font-size:1.05rem}
+.kort .roller{grid-template-columns:1fr;gap:8px}
+.kort .roll{padding:10px 12px}
+.kort .roll p{font-size:1rem}
+.svep{display:block;position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:1;
+background:rgba(31,42,32,.85);color:var(--text);font-weight:700;font-size:.95rem;padding:6px 12px;border-radius:999px;pointer-events:none;
+opacity:0;transition:opacity .4s ease}
+.svep.on{opacity:1}
+}
 </style>
 </head>
 <body>
+<div id="las"><div><h1>Presentationen</h1><p>Låses upp efter föredraget.</p><a href="./">← Till bordshäftet</a></div></div>
 <canvas id="map" role="img" aria-label="En soldat blir steg för steg en del av hemvärnet, först som organisation och sedan på Sverigekartan"></canvas>
 
 <section class="cap" id="cap" aria-live="polite">
@@ -165,16 +126,6 @@
   <p class="fade" id="text"></p>
 </section>
 
-<section class="setup" id="setup" aria-label="Välj soldat">
-  <div class="eyebrow">Bild 0 · Inställningar</div>
-  <h1>Välj din soldat</h1>
-  <input id="sok" type="search" placeholder="Sök, t.ex. 333 Bertil Erik 05" autocomplete="off" spellcheck="false" aria-label="Sök soldat">
-  <ul class="traffar" id="traffar" role="listbox"></ul>
-  <div class="vald"><div class="lbl">Vald soldat</div><div class="bet" id="valdBet"></div><div class="bef" id="valdBef"></div><div class="enh" id="valdEnh"></div><div class="full" id="valdFull"></div></div>
-  <p class="hint">Scrolla för att zooma, dra för att flytta och klicka på en soldat. Sök på kompani, pluton, grupp och nummer – med namn eller bokstav (Bertil eller B), på anrop som ErikBertil 5 eller på befattning som gruppchef eller KF.</p>
-  <button class="starta" id="starta">Starta presentationen →</button>
-</section>
-<div class="tip" id="tip"></div>
 
 <section class="kort" id="kort" aria-live="polite">
   <div class="eyebrow" id="kEyebrow"></div>
@@ -206,7 +157,6 @@
 
 <nav class="nav" aria-label="Bläddra">
   <a href="./" title="Till bordshäftet" aria-label="Till bordshäftet"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/></svg><span class="lang">&nbsp;Bordshäftet</span></a>
-  <button id="valj" title="Välj soldat (bild 0)" aria-label="Välj soldat"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg><span class="lang">&nbsp;Soldat</span></button>
   <button id="prev" aria-label="Föregående"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg><span class="lang">&nbsp;Föregående</span></button>
   <div class="dots" id="dots"></div>
   <span class="pg" id="pg"></span>
@@ -215,285 +165,266 @@
 <div class="svep" id="svep">Svep för att bläddra</div>
 
 <script>
-// ===================== Inställningar =====================
+if(document.documentElement.dataset.visa!=='1')throw 'Presentationen är låst';
 const CFG={
-  du:'Din soldat',                               // skylten vid den valda soldaten
-  standard:'33-333-B-E-05',                      // soldaten som är vald när ingen annan anges (bataljon-kompani-pluton-grupp-nummer)
-  hemorter:{33:['Eksjö',57.667,14.972]},
-  ortForskjutning:[10.7,3.6],                   // orten ritas en bit sydost om soldaten (enheter à 0,4 km), så att namnet inte hamnar på markeringen         // bataljonens ort på kartan; saknas den används bataljonens ungefärliga plats och namn
-  bokstavering:{A:'Adam',B:'Bertil',C:'Cesar',D:'David',E:'Erik',F:'Filip',G:'Gustav',H:'Helge',I:'Ivar',J:'Johan',K:'Kalle',
-    L:'Ludvig',M:'Martin',N:'Niklas',O:'Olof',P:'Petter',Q:'Quintus',R:'Rudolf',S:'Sigurd',T:'Tore',U:'Urban',V:'Viktor',
-    W:'Wilhelm',X:'Xerxes',Y:'Yngve',Z:'Zäta','Å':'Åke','Ä':'Ärlig','Ö':'Östen'},
-  bet:{                                          // beteckningar: MR · bataljon · kompani · pluton · grupp · nummer (01 = chef, 02 = stf)
-    plutoner:'ABCD',                             // kompaniets plutoner: Adam, Bertil, Cesar, David
-    grupper:'EFGH',                              // grupperna i en pluton (och i troppen): Erik, Filip, Gustav, Helge
-    plutonsledning:'PL',                         // intern kod för plutonsledningen (har ingen egen signal: plutonens signal + 1, 2, 3, 11, 12 …)
-    tropp:'D',                                   // troppen = kompaniets fjärde pluton (motsvarande): David – DS, grupperna ED–HD
-    kompaniledning:'K',                          // intern kod; kompaniledningen använder kompaniets signal + befattningsnummer (SM1 KC, SM2 stf, SM4 KF)
-    bataljon:'Bat',                              // bataljonens egna plutoner står i kompaniets ställe
-    bataljonsplutoner:{Stab:'Y','':'L',Grk:'X',CBRN:'C',Und:'K',Trafik:'I','Pionjär':'P','Båt':'Z',Flyg:'N',TOLO:'O'},   // båtpluton Z och flyggrupp N enligt H Hvbat 22; övriga antagna – aldrig Q–W (kompaniernas)
-    extraGrupper:'IJKLMNO'                       // FAL-A 1.2.3: 5.–9. grupp/tropp = I–M (Grk-plutonens tionde blir N)
-  },
-  anrop:{                                        // anropssignaler: egen bokstav + överordnad enhets egen bokstav
-    visa:true,                                   // false = inga anropssignaler i presentationen
-    regioner:{},                                 // militärregionernas anrop, t.ex. S:'XY' – okända än så länge; saknas de visas [MR S] som platshållare
-    kompanibokstaver:'QRSTNUW',                  // FAL-A 1.2.2: 1.–4. kompaniet Q R S T, därefter reserv N U W (333 = S)
-    // bataljonens egna delar (FAL-A 4.4.3–4.4.5 och H Hvbat 22): * = bataljonens bokstav, # = RS-bokstav, = = bataljonens egen signal
-    bataljonsdelar:{Stab:'=','':'AP',Grk:'A*','Pionjär':'L*',Und:'K*',CBRN:'Q#',Trafik:'T#','Båt':'Z*',Flyg:'N*',TOLO:'X*'},
-    rsBokstav:{N:'B',M:'C',V:'D',S:'E',G:'F'},   // RS N = NB, RS M = NC … (FAL-A 2.1); CBRN och trafik är militärregionsresurser
-    ledningspluton:['E','J','F'],                // lednplut AP: stabsgrupp = 1. ledngrupp EA, sambandsgrupp = 1. sbgrp JA, transport/ordonnans = 2. ledngrupp FA
-    kompanier:{145:'WU',214:'WM',234:'WU',414:'WO',307:'WJ',354:'WU',485:'WW'},   // undantag; två bokstäver = hela anropet. Hemvärnsunderrättelsekompanierna enligt beslutet (Hvund-komp)
-    // bataljonens anrop (beslut FM2019-26245:1, 2020-04-22, avsnitt 2.2). Anropen återanvänds i varje MR; sista bokstaven ärvs av kompanierna (333 = SigurdMartin).
-    bataljoner:{10:'VJ',11:'VL',12:'VM',13:'VN',14:'VU',15:'VO',16:'VP',                                     // MR N
-                17:'VJ',18:'VL',21:'VM',22:'VN',23:'VU',24:'VO',25:'VP',26:'VQ',27:'VV',28:'VW',29:'VX',      // MR M
-                19:'VJ',20:'VL',38:'VM',39:'VN',40:'VU',41:'VO',42:'VP',43:'VQ',44:'VV',45:'VW',              // MR V
-                30:'VJ',31:'VL',33:'VM',34:'VN',35:'VU',36:'VO',37:'VP',46:'VQ',47:'VV',48:'VW',49:'VX',      // MR S
-                32:'VW'}                                                                                     // Gotland                                                                                     // Gotland
-  },                                             // pluton = A–D + kompaniets bokstav (BertilSigurd), grupp = E–H + plutonens (ErikBertil)
-  plutonsledning:{hjul:6,band:5},                // 2 chefer (plutonchef lila, stf rosa) + övriga
-  egetKompani:333,                               // kompaniet med egen uppbyggnad nedan
-  egnaPlutoner:['H','H','B'],                    // 333:s skytteplutoner (H = hjulgående, B = bandgående)
-  troppKompanier:'alla',                         // 'alla' = varje insatskompani byggs som 333 (tre skytteplutoner + tropp); annars en lista, t.ex. [333]
-  plutonerPerKompani:{I:4,B:3,U:3,'Båt':3,S:3},  // insatskompanier utan tropp; D HV 2023: insats 3–4, bevakning 2–4, underrättelse 3 plutoner
-  gruppStorlek:{I:8,B:6,U:6,'Båt':6,S:6,spec:8}, // soldater per grupp (D HV: bevakningspluton fyra grupper, minst 25 personer)
-  tropp:{ledning:1,grupper:[10,12,6,7],          // troppen ritas som en pluton: 1 chef i ledningen, grupperna med gruppchef och stf
-         namn:['Stab och samband','Sjukvård','Packgrupp','Kokgrupp']},
-  kompaniledning:['KC','stf KC','KF','','','','',''],   // med text = egen etikett, tom = övriga
-  klGrupper:[4,4],                               // kompaniledningen ritas som 4 + 4
-  roller:{'KC':'chef','stf KC':'stf','KF':'kf'}, // färg: chef = lila, stf = rosa, kf = blågrön
-  langtUt:'soldater',                            // längst ut: 'soldater' = varenda soldat ritas ut, 'block' = kompaniblock
-  // bataljonens egna delar enligt Handbok Hemvärnsbataljon 2022 (H Hvbat 22): ledning (chefer) + grupper
-  plutonstyper:{
-    Stab:{ledning:['BC','stf BC','BF'],grupper:[4,4,6,6,3],namn:['S1 Personaltjänst/Själavård/Info','S2 Underrättelse/Säkerhetstjänst','S3/5 Ledning/Samverkan/CBRN/Fältarbeten','S4 Logistik','S6 Ledningssystem']},
-    '':{ledning:2,grupper:[6,6,7],namn:['Stabsgrupp','Sambandsgrupp','Transport- och ordonnansgrupp']},            // ledningspluton 21
-    Grk:{ledning:2,grupper:[7,4,6,6,6,8,6,6,6,6],namn:['Bekämpningsledningsgrupp','Rekognoseringsgrupp','Eldledningsgrupp','Eldledningsgrupp','Pjäsplatsgrupp','Ammunitionsgrupp','Pjäsgrupp','Pjäsgrupp','Pjäsgrupp','Pjäsgrupp']},
-    'Pionjär':{ledning:6,grupper:[8,8,8,8],namn:['Pionjärgrupp','Pionjärgrupp','Pionjärgrupp','Pionjärgrupp']},
-    CBRN:{ledning:8,grupper:[8,8,8],namn:['CBRN-underrättelsegrupp','CBRN-underrättelsegrupp','CBRN-saneringsgrupp']},
-    Trafik:{ledning:8,grupper:[8,8,8],namn:['Trafikgrupp','Trafikgrupp','Trafikgrupp']},
-    TOLO:{ledning:2,grupper:[5,3],namn:['Drivmedelssoldater','Ammunitionssoldater']}
-  },
-  antagenPluton:6,                               // bevaknings-, lednings-, special-, båt- och skärgårdsplutoner: antagen plutonsledning
-  kompanityper:{I:'Insatskompani',B:'Bevakningskompani',U:'Underrättelsekompani','Båt':'Båtkompani',S:'Skärgårdskompani'},
-  kompaninamn:{I:'Insatskompaniet',B:'Bevakningskompaniet',U:'Underrättelsekompaniet','Båt':'Båtkompaniet',S:'Skärgårdskompaniet'},
-  kompaniord:{I:['insatskompani','insatskompanier'],B:['bevakningskompani','bevakningskompanier'],U:['underrättelsekompani','underrättelsekompanier'],'Båt':['båtkompani','båtkompanier'],S:['skärgårdskompani','skärgårdskompanier']},
-  plutonsord:{I:['skyttepluton','skytteplutoner'],B:['bevakningspluton','bevakningsplutoner'],U:['underrättelsepluton','underrättelseplutoner'],'Båt':['båtpluton','båtplutoner'],S:['skärgårdspluton','skärgårdsplutoner']},
-  plutonsnamn:{Stab:'Bataljonsstab',TOLO:'TOLO-grupp',Grk:'Grk-pluton',CBRN:'CBRN-pluton','Pionjär':'Pionjärpluton',Und:'Underrättelsepluton',Trafik:'Trafikpluton','Båt':'Båtpluton'},
-  plutonsnamnBest:{Bataljonsstab:'bataljonsstaben','TOLO-grupp':'TOLO-gruppen',Ledningspluton:'ledningsplutonen','Grk-pluton':'granatkastarplutonen','CBRN-pluton':'CBRN-plutonen','Pionjärpluton':'pionjärplutonen',
-    Underrättelsepluton:'underrättelseplutonen',Trafikpluton:'trafikplutonen','Båtpluton':'båtplutonen'},
-  regioner:[
-    {id:'S',namn:'MR S',full:'Södra militärregionen',etikettPa:[56.25,13.55]},
-    {id:'M',namn:'MR M',full:'Mellersta militärregionen',etikettPa:[60.35,16.30]},
-    {id:'V',namn:'MR V',full:'Västra militärregionen',etikettPa:[59.95,12.35]},
-    {id:'N',namn:'MR N',full:'Norra militärregionen',etikettPa:[66.30,17.40]},
-    {id:'G',namn:'P 18',full:'Militärregion Gotland',etikettPa:[58.20,18.75]}
-  ],
-  orgRader:[['N','M','V'],['S','G']],            // regionernas placering i organisationsbilden
-  // bataljonerna (öppna källor, maxtak): nr, namn, MR, kompanier "nr typ" (I insats, B bevakning, Båt, S skärgård),
-  // bataljonens egna plutoner utöver ledningsplutonen, antal hjul- och bandgående plutoner, ungefärlig plats på kartan (lat, lon)
-  bataljoner:[
-    // nummer, namn och MR enligt Försvarsmakten och beslut FM2019-26245:1; kompanityper och antal, båt-, CBRN-, pionjär-, trafik- och Grk-plutoner
-    // enligt Försvarsmaktens sidor per utbildningsgrupp (okt 2026). Underrättelsekompaniernas nummer (145, 214, 234, 307, 354, 414, 485) enligt beslut FM2019-26245:1.
-    // 33: 331–334, 333 insats och 334 bevakning (kompaniet självt); 331 och 332 antas vara insats.
-    // Bekräftade enskilda kompanier: 241 S:t Erik (I), 242 Birger Jarl (I), 243, 252, 253 Huddinge (B), 234 Svea (U), 461.
-    // Antagna: 26 och 46–47 (antal anges inte), 306 (finns troligen, typ okänd), övriga kompaninummer och ordning, fordon.
-    // Typer: I insats, B bevakning, U underrättelse, Båt, S skärgård. Bataljonsstab, ledningspluton och TOLO (MR N) läggs till automatiskt. Musikkårer och flyggrupper är inte med.
-    [10,'Lapplandsjägarbataljonen','N','101 I,102 I,103 B','',0,8,[67.86,20.23]],
-    [11,'Gränsjägarbataljonen','N','111 I,112 I,113 I,114 B','Båt',0,12,[66.40,23.30]],
-    [12,'Norrbottensbataljonen','N','121 I,122 I,123 B,124 B','Pionjär',0,8,[65.83,21.69]],
-    [13,'Västerbottensbataljonen','N','131 I,132 I,133 I,134 B,135 B,136 B,137 B','CBRN,Båt',0,12,[64.05,19.90]],
-    [14,'Fältjägarbataljonen','N','141 I,142 I,143 I,144 B,145 U','',0,12,[63.18,14.64]],
-    [15,'Ångermanlandsbataljonen','N','151 I,152 I,153 B,154 B','Båt,Trafik',0,8,[63.29,18.40]],
-    [16,'Medelpadsbataljonen','N','161 I,162 I,163 I,164 B','Båt',0,12,[62.39,16.90]],
-    [17,'Dalabataljonen','M','171 I,172 I,173 B','Pionjär',8,1,[60.61,15.20]],
-    [18,'Gävleborgsbataljonen','M','181 I,182 I,183 B','Båt',8,0,[60.95,16.80]],
-    [19,'Värmlandsbataljonen','V','191 I,192 I,193 B,194 B','',8,0,[59.60,13.30]],
-    [20,'Sannahedsbataljonen','V','201 I,202 I,203 B','Pionjär',8,1,[59.20,15.10]],
-    [21,'Upplandsbataljonen','M','211 I,212 I,213 B,214 U','',8,0,[60.05,17.60]],
-    [22,'Västmanlandsbataljonen','M','221 I,222 I,223 B','',8,0,[59.75,16.40]],
-    [23,'Attundalandsbataljonen','M','231 I,232 I,233 B,234 U','',8,0,[59.50,18.05]],
-    [24,'Stockholmsbataljonen','M','241 I,242 I,243 B','',8,0,[59.33,18.05]],
-    [25,'Telgehusbataljonen','M','251 I,252 I,253 B','',8,0,[59.15,17.55]],
-    [26,'Ulvsundabataljonen','M','261 I,262 I,263 B','',8,0,[59.38,17.95]],
-    [27,'Södermanlandsbataljonen','M','271 I,272 I,273 B','Båt',8,0,[58.95,16.70]],
-    [28,'Roslagsbataljonen','M','281 I,282 I,283 B','Båt',8,0,[59.80,18.60]],
-    [29,'Södertörnsbataljonen','M','291 I,292 I,293 B,294 Båt','CBRN',8,0,[59.10,18.20]],
-    [30,'Första livgrenadjärbataljonen','S','301 I,302 I,303 I,304 B,305 B,307 U','',12,0,[58.41,15.62]],
-    [31,'Andra livgrenadjärbataljonen','S','311 I,312 B,313 B','Båt,Båt',4,0,[58.59,16.18]],
-    [32,'Gotlandsbataljonen','G','321 I,322 B,323 B','Båt',4,0,[57.50,18.55]],
-    [33,'Norra Smålandsbataljonen','S','331 I,332 I,333 I,334 B','Pionjär',8,1,[57.67,14.97]],
-    [34,'Kalmarbataljonen','S','341 I,342 I,343 B,344 B','',8,0,[56.95,16.10]],
-    [35,'Kronobergsbataljonen','S','351 I,352 I,353 B,354 U','',8,0,[56.88,14.81]],
-    [36,'Blekinge västra bataljon','S','361 I,362 B,363 B','',4,0,[56.30,14.75]],
-    [37,'Blekinge östra bataljon','S','371 I,372 B,373 Båt','',4,0,[56.30,15.50]],
-    [38,'Västra Skaraborgsbataljonen','V','381 I,382 I,383 B','Trafik',8,0,[58.55,13.20]],
-    [39,'Östra Skaraborgsbataljonen','V','391 I,392 I,393 B','',8,0,[58.20,13.85]],
-    [40,'Bohusbataljonen','V','401 I,402 I,403 I,404 B','Båt',12,0,[58.45,11.90]],
-    [41,'Göteborgs södra bataljon','V','411 I,412 I,413 B,414 U','',8,0,[57.55,12.10]],
-    [42,'Göteborgs norra bataljon','V','421 I,422 I,423 B','CBRN',8,0,[57.95,12.10]],
-    [43,'Göteborgs skärgårdsbataljon','V','431 I,432 I,433 B,434 Båt','',8,0,[57.70,11.85]],
-    [44,'Älvsborgsbataljonen','V','441 I,442 I,443 B','Grk',8,1,[57.72,13.00]],
-    [45,'Hallandsbataljonen','V','451 I,452 I,453 I,454 B','',12,0,[56.80,12.95]],
-    [46,'Södra skånska bataljonen','S','461 I,462 I,463 B','',8,0,[55.60,13.75]],
-    [47,'Malmöhusbataljonen','S','471 I,472 I,473 B','Trafik',8,0,[55.62,13.10]],
-    [48,'Skånska dragonbataljonen','S','481 I,482 I,483 B,484 B,485 U','',8,0,[55.90,13.60]],
-    [49,'Norra skånska bataljonen','S','491 I,492 I,493 B,494 B','Grk',8,1,[56.15,13.85]]
-  ],
-  orter:[['Stockholm',59.33,18.07],['Göteborg',57.71,11.97],['Malmö',55.60,13.00],['Östersund',63.18,14.64],
-         ['Umeå',63.83,20.26],['Luleå',65.58,22.15],['Visby',57.64,18.29]],
-  steg:[                                         // rubriker och texter för steg 0–9 skrivs utifrån den valda soldaten
-    {rubrik:'Soldaten'},{rubrik:'Stridsparet'},{rubrik:'Omgången'},{rubrik:'Gruppen'},{rubrik:'Plutonen'},{rubrik:'Kompaniet'},
-    {rubrik:'Bataljonen'},{rubrik:'Militärregionen'},{rubrik:'Hemvärnet'},
-    {rubrik:'Hemvärnet på kartan', text:'Militärregionerna på sina platser – bataljoner över hela landet.', karta:true},
-    {rubrik:'Inzoomning', text:'', inzoom:true},
-    {kort:true, rubrik:'Allt hänger på den enskilde soldaten',
-     ingress:'Från stridsparet till hela hemvärnet – kedjan håller bara om varje soldat:',
-     punkter:[['Förstår','sin uppgift – och gruppens och plutonens.'],['Tar ansvar','för sin uppgift.'],['Utför','sin uppgift.']],
-     utover:'Utöver:', fot:'… och tusentals saker till som vi förväntar oss att varje soldat bara löser.'},
-    {kort:true, roller:true, rubrik:'Vem gör vad?',
-     ingress:'Runt din soldat finns chefer och funktioner som leder, planerar och tar hand om.',
-     rollkort:[                                  // {grupp} {pluton} {kompani} {tropp} ersätts med antalen
-       {id:'gc',rubrik:'Gruppchefen',text:'Soldatens närmaste chef. Leder gruppen på {grupp} och har koll på var alla är och hur de mår.'},
-       {id:'pl',rubrik:'Plutonsledningen',text:'Plutonchef, stf och några till. Leder plutonens {pluton} – fördelar uppgifterna, planerar dygnet och ser till att grupperna har det de behöver.'},
-       {id:'kl',rubrik:'Kompaniledningen',text:'KC, stf KC, KF med flera. Leder hela kompaniet på {kompani} – planerar övningar och insatser, ser till att människor, utrustning, mat och transporter fungerar och är länken uppåt. KF håller ihop det praktiska: materiel, förnödenheter och administration.'},
-       {id:'tr',rubrik:'Troppen',text:'Stab och samband, sjukvård, pack- och kokgrupp – {tropp} personer som ser till att kompaniet kan ledas, får vård, utrustning och mat.'}
-     ]}
-  ],
-  byteSek:1.5,                                   // sekunder mellan varje byte i Utöver-listan (varannan rad i tur och ordning)
-  baraLoser:[                                   // det soldaten "bara löser" – visas fem i taget, slumpas och byts ut ett i taget (tillägg från Nyström, Nordahl och Alvarsson)
-    'Anpassar klädseln efter verksamhet och väder','Genomför åtgärder före körning','Håller koll på sin stridsparskamrat',
-    'Kontrollerar säkringen','Dricker och äter när tillfälle ges','Påminner sina kamrater',
-    'Laddar batterier till radio och lampor','Packar fordonet','Packar sin utrustning efter packlistan',
-    'Reser tältet','Kommer i tid','Skriver 7S-rapport',
-    'Rapporterar fel och brister direkt','Upprättar infartspost','Byter till torra strumpor och sköter fötterna',
-    'Gräver värnet','Kamouflerar sig själv och sin utrustning','Har koll på sin materiel',
-    'Håller ljud- och ljusdisciplin','Sköter sin hygien','Fyller på vatten innan avmarsch',
-    'Upprätthåller sina vapenkunskaper','Kontrollerar att inget lämnas kvar','Vårdar sitt vapen',
-    'Har sjukvårdsutrustningen där den ska vara','Navigerar med kartan','Frågar när något är oklart',
-    'Löser uppkomna situationer','Hjälper kamraten som har det tungt','Kontrollerar gruppchefens status',
-    'Följer säkerhetsbestämmelserna','Har rätt utrustning för uppgiften','Tankar fordonet innan det behövs',
-    'Tänker utanför boxen','Sover när det går','Kan sin SoldF',
-    'Torkar och vårdar kläder och kängor','Kan sin SoldR Mtrl','Har legitimationen med sig',
-    'Är alltid en händelse ifrån att leda','Kontrollerar sin utrustning före uppgiften','Tillser ett gott stridsvärde utanför övningen',
-    'Pratar inte om verksamheten i sociala medier','Sänder en god bild av hemvärnet','Lämnar tillbaka utrustning i gott skick',
-    'Kollar väderprognosen inför övningen','Planerar ledigheten med arbetsgivare och familj','Svarar på kallelsen och anmäler sig i tid',
-    'Tränar för att orka','Håller skjutprov och utbildningar aktuella','Tar initiativ när läget kräver det',
-    'Tar emot nya kamrater och visar hur det fungerar','Rapporterar skador och tillbud','Plockar upp efter sig på rastplatsen',
-    'Kontrollerar sambandet innan avfärd','Har koll på sin ammunition','Delar med sig av sina kunskaper',
-    'Vapenkontroll (skarp och lös)','Vapenhantering','Posttjänst',
-    'Igelkottsförsvar','SOLO','Personlig sjukvårdsberedskap',
-    'Kamratstöd'
-  ]
+du:'Din soldat',
+standard:'33-333-B-E-05',
+hemorter:{33:['Eksjö',57.667,14.972]},
+ortForskjutning:[10.7,3.6],
+bokstavering:{A:'Adam',B:'Bertil',C:'Cesar',D:'David',E:'Erik',F:'Filip',G:'Gustav',H:'Helge',I:'Ivar',J:'Johan',K:'Kalle',
+L:'Ludvig',M:'Martin',N:'Niklas',O:'Olof',P:'Petter',Q:'Quintus',R:'Rudolf',S:'Sigurd',T:'Tore',U:'Urban',V:'Viktor',
+W:'Wilhelm',X:'Xerxes',Y:'Yngve',Z:'Zäta','Å':'Åke','Ä':'Ärlig','Ö':'Östen'},
+bet:{
+plutoner:'ABCD',
+grupper:'EFGH',
+plutonsledning:'PL',
+tropp:'D',
+kompaniledning:'K',
+bataljon:'Bat',
+bataljonsplutoner:{Stab:'Y','':'L',Grk:'X',CBRN:'C',Und:'K',Trafik:'I','Pionjär':'P','Båt':'Z',Flyg:'N',TOLO:'O'},
+extraGrupper:'IJKLMNO'
+},
+anrop:{
+visa:true,
+kompanibokstaver:'QRSTNUW',
+bataljonsdelar:{Stab:'=','':'AP',Grk:'A*','Pionjär':'L*',Und:'K*',CBRN:'Q#',Trafik:'T#','Båt':'Z*',Flyg:'N*',TOLO:'X*'},
+rsBokstav:{N:'B',M:'C',V:'D',S:'E',G:'F'},
+ledningspluton:['E','J','F'],
+kompanier:{145:'WU',214:'WM',234:'WU',414:'WO',307:'WJ',354:'WU',485:'WW'},
+bataljoner:{10:'VJ',11:'VL',12:'VM',13:'VN',14:'VU',15:'VO',16:'VP',
+17:'VJ',18:'VL',21:'VM',22:'VN',23:'VU',24:'VO',25:'VP',26:'VQ',27:'VV',28:'VW',29:'VX',
+19:'VJ',20:'VL',38:'VM',39:'VN',40:'VU',41:'VO',42:'VP',43:'VQ',44:'VV',45:'VW',
+30:'VJ',31:'VL',33:'VM',34:'VN',35:'VU',36:'VO',37:'VP',46:'VQ',47:'VV',48:'VW',49:'VX',
+32:'VW'}
+},
+plutonsledning:{hjul:6,band:5},
+egetKompani:333,
+egnaPlutoner:['H','H','B'],
+troppKompanier:'alla',
+plutonerPerKompani:{I:4,B:3,U:3,'Båt':3,S:3},
+gruppStorlek:{I:8,B:6,U:6,'Båt':6,S:6,spec:8},
+tropp:{ledning:1,grupper:[10,12,6,7],
+namn:['Stab och samband','Sjukvård','Packgrupp','Kokgrupp']},
+kompaniledning:['KC','stf KC','KF','','','','',''],
+klGrupper:[4,4],
+roller:{'KC':'chef','stf KC':'stf','KF':'kf'},
+langtUt:'soldater',
+plutonstyper:{
+Stab:{ledning:['BC','stf BC','BF'],grupper:[4,4,6,6,3],namn:['S1 Personaltjänst/Själavård/Info','S2 Underrättelse/Säkerhetstjänst','S3/5 Ledning/Samverkan/CBRN/Fältarbeten','S4 Logistik','S6 Ledningssystem']},
+'':{ledning:2,grupper:[6,6,7],namn:['Stabsgrupp','Sambandsgrupp','Transport- och ordonnansgrupp']},
+Grk:{ledning:2,grupper:[7,4,6,6,6,8,6,6,6,6],namn:['Bekämpningsledningsgrupp','Rekognoseringsgrupp','Eldledningsgrupp','Eldledningsgrupp','Pjäsplatsgrupp','Ammunitionsgrupp','Pjäsgrupp','Pjäsgrupp','Pjäsgrupp','Pjäsgrupp']},
+'Pionjär':{ledning:6,grupper:[8,8,8,8],namn:['Pionjärgrupp','Pionjärgrupp','Pionjärgrupp','Pionjärgrupp']},
+CBRN:{ledning:8,grupper:[8,8,8],namn:['CBRN-underrättelsegrupp','CBRN-underrättelsegrupp','CBRN-saneringsgrupp']},
+Trafik:{ledning:8,grupper:[8,8,8],namn:['Trafikgrupp','Trafikgrupp','Trafikgrupp']},
+TOLO:{ledning:2,grupper:[5,3],namn:['Drivmedelssoldater','Ammunitionssoldater']}
+},
+antagenPluton:6,
+kompanityper:{I:'Insatskompani',B:'Bevakningskompani',U:'Underrättelsekompani','Båt':'Båtkompani',S:'Skärgårdskompani'},
+kompaninamn:{I:'Insatskompaniet',B:'Bevakningskompaniet',U:'Underrättelsekompaniet','Båt':'Båtkompaniet',S:'Skärgårdskompaniet'},
+kompaniord:{I:['insatskompani','insatskompanier'],B:['bevakningskompani','bevakningskompanier'],U:['underrättelsekompani','underrättelsekompanier'],'Båt':['båtkompani','båtkompanier'],S:['skärgårdskompani','skärgårdskompanier']},
+plutonsord:{I:['skyttepluton','skytteplutoner'],B:['bevakningspluton','bevakningsplutoner'],U:['underrättelsepluton','underrättelseplutoner'],'Båt':['båtpluton','båtplutoner'],S:['skärgårdspluton','skärgårdsplutoner']},
+plutonsnamn:{Stab:'Bataljonsstab',TOLO:'TOLO-grupp',Grk:'Grk-pluton',CBRN:'CBRN-pluton','Pionjär':'Pionjärpluton',Und:'Underrättelsepluton',Trafik:'Trafikpluton','Båt':'Båtpluton'},
+plutonsnamnBest:{Bataljonsstab:'bataljonsstaben','TOLO-grupp':'TOLO-gruppen',Ledningspluton:'ledningsplutonen','Grk-pluton':'granatkastarplutonen','CBRN-pluton':'CBRN-plutonen','Pionjärpluton':'pionjärplutonen',
+Underrättelsepluton:'underrättelseplutonen',Trafikpluton:'trafikplutonen','Båtpluton':'båtplutonen'},
+regioner:[
+{id:'S',namn:'MR S',full:'Södra militärregionen',etikettPa:[56.25,13.55]},
+{id:'M',namn:'MR M',full:'Mellersta militärregionen',etikettPa:[60.35,16.30]},
+{id:'V',namn:'MR V',full:'Västra militärregionen',etikettPa:[59.95,12.35]},
+{id:'N',namn:'MR N',full:'Norra militärregionen',etikettPa:[66.30,17.40]},
+{id:'G',namn:'P 18',full:'Militärregion Gotland',etikettPa:[58.20,18.75]}
+],
+orgRader:[['N','M','V'],['S','G']],
+bataljoner:[
+[10,'Lapplandsjägarbataljonen','N','101 I,102 I,103 B','',0,8,[67.86,20.23]],
+[11,'Gränsjägarbataljonen','N','111 I,112 I,113 I,114 B','Båt',0,12,[66.40,23.30]],
+[12,'Norrbottensbataljonen','N','121 I,122 I,123 B,124 B','Pionjär',0,8,[65.83,21.69]],
+[13,'Västerbottensbataljonen','N','131 I,132 I,133 I,134 B,135 B,136 B,137 B','CBRN,Båt',0,12,[64.05,19.90]],
+[14,'Fältjägarbataljonen','N','141 I,142 I,143 I,144 B,145 U','',0,12,[63.18,14.64]],
+[15,'Ångermanlandsbataljonen','N','151 I,152 I,153 B,154 B','Båt,Trafik',0,8,[63.29,18.40]],
+[16,'Medelpadsbataljonen','N','161 I,162 I,163 I,164 B','Båt',0,12,[62.39,16.90]],
+[17,'Dalabataljonen','M','171 I,172 I,173 B','Pionjär',8,1,[60.61,15.20]],
+[18,'Gävleborgsbataljonen','M','181 I,182 I,183 B','Båt',8,0,[60.95,16.80]],
+[19,'Värmlandsbataljonen','V','191 I,192 I,193 B,194 B','',8,0,[59.60,13.30]],
+[20,'Sannahedsbataljonen','V','201 I,202 I,203 B','Pionjär',8,1,[59.20,15.10]],
+[21,'Upplandsbataljonen','M','211 I,212 I,213 B,214 U','',8,0,[60.05,17.60]],
+[22,'Västmanlandsbataljonen','M','221 I,222 I,223 B','',8,0,[59.75,16.40]],
+[23,'Attundalandsbataljonen','M','231 I,232 I,233 B,234 U','',8,0,[59.50,18.05]],
+[24,'Stockholmsbataljonen','M','241 I,242 I,243 B','',8,0,[59.33,18.05]],
+[25,'Telgehusbataljonen','M','251 I,252 I,253 B','',8,0,[59.15,17.55]],
+[26,'Ulvsundabataljonen','M','261 I,262 I,263 B','',8,0,[59.38,17.95]],
+[27,'Södermanlandsbataljonen','M','271 I,272 I,273 B','Båt',8,0,[58.95,16.70]],
+[28,'Roslagsbataljonen','M','281 I,282 I,283 B','Båt',8,0,[59.80,18.60]],
+[29,'Södertörnsbataljonen','M','291 I,292 I,293 B,294 Båt','CBRN',8,0,[59.10,18.20]],
+[30,'Första livgrenadjärbataljonen','S','301 I,302 I,303 I,304 B,305 B,307 U','',12,0,[58.41,15.62]],
+[31,'Andra livgrenadjärbataljonen','S','311 I,312 B,313 B','Båt,Båt',4,0,[58.59,16.18]],
+[32,'Gotlandsbataljonen','G','321 I,322 B,323 B','Båt',4,0,[57.50,18.55]],
+[33,'Norra Smålandsbataljonen','S','331 I,332 I,333 I,334 B','Pionjär',8,1,[57.67,14.97]],
+[34,'Kalmarbataljonen','S','341 I,342 I,343 B,344 B','',8,0,[56.95,16.10]],
+[35,'Kronobergsbataljonen','S','351 I,352 I,353 B,354 U','',8,0,[56.88,14.81]],
+[36,'Blekinge västra bataljon','S','361 I,362 B,363 B','',4,0,[56.30,14.75]],
+[37,'Blekinge östra bataljon','S','371 I,372 B,373 Båt','',4,0,[56.30,15.50]],
+[38,'Västra Skaraborgsbataljonen','V','381 I,382 I,383 B','Trafik',8,0,[58.55,13.20]],
+[39,'Östra Skaraborgsbataljonen','V','391 I,392 I,393 B','',8,0,[58.20,13.85]],
+[40,'Bohusbataljonen','V','401 I,402 I,403 I,404 B','Båt',12,0,[58.45,11.90]],
+[41,'Göteborgs södra bataljon','V','411 I,412 I,413 B,414 U','',8,0,[57.55,12.10]],
+[42,'Göteborgs norra bataljon','V','421 I,422 I,423 B','CBRN',8,0,[57.95,12.10]],
+[43,'Göteborgs skärgårdsbataljon','V','431 I,432 I,433 B,434 Båt','',8,0,[57.70,11.85]],
+[44,'Älvsborgsbataljonen','V','441 I,442 I,443 B','Grk',8,1,[57.72,13.00]],
+[45,'Hallandsbataljonen','V','451 I,452 I,453 I,454 B','',12,0,[56.80,12.95]],
+[46,'Södra skånska bataljonen','S','461 I,462 I,463 B','',8,0,[55.60,13.75]],
+[47,'Malmöhusbataljonen','S','471 I,472 I,473 B','Trafik',8,0,[55.62,13.10]],
+[48,'Skånska dragonbataljonen','S','481 I,482 I,483 B,484 B,485 U','',8,0,[55.90,13.60]],
+[49,'Norra skånska bataljonen','S','491 I,492 I,493 B,494 B','Grk',8,1,[56.15,13.85]]
+],
+orter:[['Stockholm',59.33,18.07],['Göteborg',57.71,11.97],['Malmö',55.60,13.00],['Östersund',63.18,14.64],
+['Umeå',63.83,20.26],['Luleå',65.58,22.15],['Visby',57.64,18.29]],
+steg:[
+{rubrik:'Soldaten'},{rubrik:'Stridsparet'},{rubrik:'Omgången'},{rubrik:'Gruppen'},{rubrik:'Plutonen'},{rubrik:'Kompaniet'},
+{rubrik:'Bataljonen'},{rubrik:'Militärregionen'},{rubrik:'Hemvärnet'},
+{rubrik:'Hemvärnet på kartan', text:'Militärregionerna på sina platser – bataljoner över hela landet.', karta:true},
+{rubrik:'Inzoomning', text:'', inzoom:true},
+{kort:true, rubrik:'Allt hänger på den enskilde soldaten',
+ingress:'Från stridsparet till hela hemvärnet – kedjan håller bara om varje soldat:',
+punkter:[['Förstår','sin uppgift – och gruppens och plutonens.'],['Tar ansvar','för sin uppgift.'],['Utför','sin uppgift.']],
+utover:'Utöver:', fot:'… och tusentals saker till som vi förväntar oss att varje soldat bara löser.'},
+{kort:true, roller:true, rubrik:'Vem gör vad?',
+ingress:'Runt din soldat finns chefer och funktioner som leder, planerar och tar hand om.',
+rollkort:[
+{id:'gc',rubrik:'Gruppchefen',text:'Soldatens närmaste chef. Leder gruppen på {grupp} och har koll på var alla är och hur de mår.'},
+{id:'pl',rubrik:'Plutonsledningen',text:'Plutonchef, stf och några till. Leder plutonens {pluton} – fördelar uppgifterna, planerar dygnet och ser till att grupperna har det de behöver.'},
+{id:'kl',rubrik:'Kompaniledningen',text:'KC, stf KC, KF med flera. Leder hela kompaniet på {kompani} – planerar övningar och insatser, ser till att människor, utrustning, mat och transporter fungerar och är länken uppåt. KF håller ihop det praktiska: materiel, förnödenheter och administration.'},
+{id:'tr',rubrik:'Troppen',text:'Stab och samband, sjukvård, pack- och kokgrupp – {tropp} personer som ser till att kompaniet kan ledas, får vård, utrustning och mat.'}
+]}
+],
+byteSek:1.5,
+baraLoser:[
+'Anpassar klädseln efter verksamhet och väder','Genomför åtgärder före körning','Håller koll på sin stridsparskamrat',
+'Kontrollerar säkringen','Dricker och äter när tillfälle ges','Påminner sina kamrater',
+'Laddar batterier till radio och lampor','Packar fordonet','Packar sin utrustning efter packlistan',
+'Reser tältet','Kommer i tid','Skriver 7S-rapport',
+'Rapporterar fel och brister direkt','Upprättar infartspost','Byter till torra strumpor och sköter fötterna',
+'Gräver värnet','Kamouflerar sig själv och sin utrustning','Har koll på sin materiel',
+'Håller ljud- och ljusdisciplin','Sköter sin hygien','Fyller på vatten innan avmarsch',
+'Upprätthåller sina vapenkunskaper','Kontrollerar att inget lämnas kvar','Vårdar sitt vapen',
+'Har sjukvårdsutrustningen där den ska vara','Navigerar med kartan','Frågar när något är oklart',
+'Löser uppkomna situationer','Hjälper kamraten som har det tungt','Kontrollerar gruppchefens status',
+'Följer säkerhetsbestämmelserna','Har rätt utrustning för uppgiften','Tankar fordonet innan det behövs',
+'Tänker utanför boxen','Sover när det går','Kan sin SoldF',
+'Torkar och vårdar kläder och kängor','Kan sin SoldR Mtrl','Har legitimationen med sig',
+'Är alltid en händelse ifrån att leda','Kontrollerar sin utrustning före uppgiften','Tillser ett gott stridsvärde utanför övningen',
+'Pratar inte om verksamheten i sociala medier','Sänder en god bild av hemvärnet','Lämnar tillbaka utrustning i gott skick',
+'Kollar väderprognosen inför övningen','Planerar ledigheten med arbetsgivare och familj','Svarar på kallelsen och anmäler sig i tid',
+'Tränar för att orka','Håller skjutprov och utbildningar aktuella','Tar initiativ när läget kräver det',
+'Tar emot nya kamrater och visar hur det fungerar','Rapporterar skador och tillbud','Plockar upp efter sig på rastplatsen',
+'Kontrollerar sambandet innan avfärd','Har koll på sin ammunition','Delar med sig av sina kunskaper',
+'Vapenkontroll (skarp och lös)','Vapenhantering','Posttjänst',
+'Igelkottsförsvar','SOLO','Personlig sjukvårdsberedskap',
+'Kamratstöd'
+]
 };
-
-// ===================== Organisationen (layouten är densamma vem som än är vald) =====================
 const STEPS=CFG.steg.length;
 const MOTION=matchMedia('(prefers-reduced-motion: reduce)').matches?0.02:1;
 const COLS={own:['#d4a017','#6b5300'],chef:['#7b3fa0','#4d2268'],stf:['#d9579b','#8f2c62'],kf:['#138a8f','#0b5559'],std:['#3b5e40','#24382a']};
 const MAP=CFG.steg.findIndex(s=>s.karta),ZOOM=CFG.steg.findIndex(s=>s.inzoom),LASTORG=MAP-1;
 const isCard=n=>!!(CFG.steg[n]&&CFG.steg[n].kort),CARDS=CFG.steg.map((s,i)=>i).filter(isCard);
 const BOK=CFG.bokstavering,BT=CFG.bet;
-const P=[],F=[],BATS=[];                          // personer, ramar, bataljonerna
+const P=[],F=[],BATS=[];
 const PAD=[.42,.8,1.2,1.1,6],RG=1.35;
-const TW=Math.max(...CFG.tropp.grupper)-1,KW=31.5+TW,K4=3*10.5+7;   // troppens bredd; tropp- och fyrplutonskompaniets bredd
-const COLW=KW+7,BWID=COLW+KW+4.6,bH=rows=>32.05+(rows-1)*21;   // bataljonsramens bredd och höjd
+const TW=Math.max(...CFG.tropp.grupper)-1,KW=31.5+TW,K4=3*10.5+7;
+const COLW=KW+7,BWID=COLW+KW+4.6,bH=rows=>32.05+(rows-1)*21;
 const range=(n,f)=>Array.from({length:n},(_,k)=>f(k));
-// path = [MR, bataljon, kompani ('Bat' för bataljonens plutoner), pluton, grupp ('-' för kompaniledningen), index]
 function box(x0,y0,x1,y1,lvl,path,top){const p=PAD[lvl],f={bx0:x0-p,by0:y0-(top||p),bx1:x1+p,by1:y1+p,lvl,path,label:''};F.push(f);return f}
 function frameBox(f0,...lv){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(let i=f0;i<F.length;i++)if(lv.includes(F[i].lvl)){const f=F[i];x0=Math.min(x0,f.bx0);y0=Math.min(y0,f.by0);x1=Math.max(x1,f.bx1);y1=Math.max(y1,f.by1)}return [x0,y0,x1,y1]}
-function rad(xs,y,path,o,roles){                  // ett led: chef längst till vänster, stf bredvid (om roller)
-  xs.forEach((x,k)=>P.push(Object.assign({bx:x,by:y,path:[...path,k],ri:k,rn:xs.length,blk:k>>2,role:roles?(k===0?'chef':k===1?'stf':''):''},o)));
+function rad(xs,y,path,o,roles){
+xs.forEach((x,k)=>P.push(Object.assign({bx:x,by:y,path:[...path,k],ri:k,rn:xs.length,blk:k>>2,role:roles?(k===0?'chef':k===1?'stf':''):''},o)));
 }
 const gsOf=kind=>CFG.gruppStorlek[kind]||8;
-function pluton(ox,oy,pth,mob,kind,tag){          // plutonsledning överst, fyra grupper under
-  const n=kind==='I'?(mob==='B'?CFG.plutonsledning.band:CFG.plutonsledning.hjul):CFG.antagenPluton;
-  const gs=gsOf(kind),gx=ox+(8-gs)/2;
-  [...BT.grupper].forEach((g,i)=>{const y=oy+i*RG;rad(range(gs,k=>gx+k),y,[...pth,g],{},true);box(gx,y,gx+gs-1,y,0,[...pth,g])});
-  rad(range(n,k=>ox+3.5+(k-(n-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,pl:true},true);
-  const f=box(ox,oy-1.6,ox+7,oy+3*RG,1,pth);f.mob=mob||null;f.tag=tag||'';f.kind=kind;
+function pluton(ox,oy,pth,mob,kind,tag){
+const n=kind==='I'?(mob==='B'?CFG.plutonsledning.band:CFG.plutonsledning.hjul):CFG.antagenPluton;
+const gs=gsOf(kind),gx=ox+(8-gs)/2;
+[...BT.grupper].forEach((g,i)=>{const y=oy+i*RG;rad(range(gs,k=>gx+k),y,[...pth,g],{},true);box(gx,y,gx+gs-1,y,0,[...pth,g])});
+rad(range(n,k=>ox+3.5+(k-(n-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,pl:true},true);
+const f=box(ox,oy-1.6,ox+7,oy+3*RG,1,pth);f.mob=mob||null;f.tag=tag||'';f.kind=kind;
 }
-function tropp(ox,oy,pth,mob){                    // ritas som en pluton – en chef i ledningen, gruppchef och stf i varje grupp
-  const T=CFG.tropp;
-  rad(range(T.ledning,k=>ox+TW/2+(k-(T.ledning-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,tr:true},true);
-  T.grupper.forEach((n,g)=>{const y=oy+g*RG,gl=BT.grupper[g];rad(range(n,k=>ox+k),y,[...pth,gl],{tr:true,gnamn:T.namn[g]},true);box(ox,y,ox+n-1,y,0,[...pth,gl])});
-  const f=box(ox,oy-1.6,ox+TW,oy+(T.grupper.length-1)*RG,1,pth);f.tropp=true;f.mob=mob||null;f.kind='T';
+function tropp(ox,oy,pth,mob){
+const T=CFG.tropp;
+rad(range(T.ledning,k=>ox+TW/2+(k-(T.ledning-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,tr:true},true);
+T.grupper.forEach((n,g)=>{const y=oy+g*RG,gl=BT.grupper[g];rad(range(n,k=>ox+k),y,[...pth,gl],{tr:true,gnamn:T.namn[g]},true);box(ox,y,ox+n-1,y,0,[...pth,gl])});
+const f=box(ox,oy-1.6,ox+TW,oy+(T.grupper.length-1)*RG,1,pth);f.tropp=true;f.mob=mob||null;f.kind='T';
 }
-function grupperad(ox,oy,pth,mob,T,tag){           // bataljonens egna delar: chefer överst, namngivna grupper under
-  const L=Array.isArray(T.ledning)?T.ledning:range(T.ledning,()=>''),W=Math.max(...T.grupper,L.length)-1;
-  const p0=P.length;
-  rad(range(L.length,k=>ox+W/2+(k-(L.length-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,pl:true},true);
-  for(let i=p0;i<P.length;i++)if(L[P[i].ri])P[i].tag=L[P[i].ri];
-  const gl=[...BT.grupper,...BT.extraGrupper];
-  T.grupper.forEach((n,g)=>{const y=oy+g*RG;rad(range(n,k=>ox+k),y,[...pth,gl[g]],{gnamn:T.namn[g]},true);box(ox,y,ox+n-1,y,0,[...pth,gl[g]])});
-  const f=box(ox,oy-1.6,ox+W,oy+(T.grupper.length-1)*RG,1,pth);f.mob=mob||null;f.tag=tag||'';f.kind='spec';f.typ=T;
+function grupperad(ox,oy,pth,mob,T,tag){
+const L=Array.isArray(T.ledning)?T.ledning:range(T.ledning,()=>''),W=Math.max(...T.grupper,L.length)-1;
+const p0=P.length;
+rad(range(L.length,k=>ox+W/2+(k-(L.length-1)/2)),oy-1.6,[...pth,BT.plutonsledning],{led:true,pl:true},true);
+for(let i=p0;i<P.length;i++)if(L[P[i].ri])P[i].tag=L[P[i].ri];
+const gl=[...BT.grupper,...BT.extraGrupper];
+T.grupper.forEach((n,g)=>{const y=oy+g*RG;rad(range(n,k=>ox+k),y,[...pth,gl[g]],{gnamn:T.namn[g]},true);box(ox,y,ox+n-1,y,0,[...pth,gl[g]])});
+const f=box(ox,oy-1.6,ox+W,oy+(T.grupper.length-1)*RG,1,pth);f.mob=mob||null;f.tag=tag||'';f.kind='spec';f.typ=T;
 }
-function kompani(ox,oy,pth,K){                    // tre skytteplutoner + tropp, eller fyra plutoner; + kompaniledning (4 + 4)
-  const np=K.tropp?3:(CFG.plutonerPerKompani[K.typ]||4),W=K.tropp?KW:(np-1)*10.5+7,L=CFG.kompaniledning;
-  for(let p=0;p<np;p++)pluton(ox+p*10.5,oy,[...pth,BT.plutoner[p]],K.mob[p],K.typ,'');
-  if(K.tropp)tropp(ox+31.5,oy,[...pth,BT.tropp],K.mob[3]);
-  const gaps=CFG.klGrupper.length-1,wid=L.length-1+gaps*.9;let k=0;
-  CFG.klGrupper.forEach((n,g)=>{for(let q=0;q<n&&k<L.length;q++,k++)
-    P.push({bx:ox+W/2-wid/2+k+g*.9,by:oy-5.6,path:[...pth,BT.kompaniledning,'-',k],ri:k,rn:L.length,blk:g,led:true,kl:true,role:CFG.roller[L[k]]||'',tag:L[k]})});
-  const f=box(ox,oy-5.6,ox+W,oy+3*RG+1.2,2,pth);f.K=K;f.short=String(K.nr);
+function kompani(ox,oy,pth,K){
+const np=K.tropp?3:(CFG.plutonerPerKompani[K.typ]||4),W=K.tropp?KW:(np-1)*10.5+7,L=CFG.kompaniledning;
+for(let p=0;p<np;p++)pluton(ox+p*10.5,oy,[...pth,BT.plutoner[p]],K.mob[p],K.typ,'');
+if(K.tropp)tropp(ox+31.5,oy,[...pth,BT.tropp],K.mob[3]);
+const gaps=CFG.klGrupper.length-1,wid=L.length-1+gaps*.9;let k=0;
+CFG.klGrupper.forEach((n,g)=>{for(let q=0;q<n&&k<L.length;q++,k++)
+P.push({bx:ox+W/2-wid/2+k+g*.9,by:oy-5.6,path:[...pth,BT.kompaniledning,'-',k],ri:k,rn:L.length,blk:g,led:true,kl:true,role:CFG.roller[L[k]]||'',tag:L[k]})});
+const f=box(ox,oy-5.6,ox+W,oy+3*RG+1.2,2,pth);f.K=K;f.short=String(K.nr);
 }
-function bataljon(ox,oy,R,D){                     // bataljonens egna plutoner överst, kompanierna i två kolumner under
-  const f0=F.length,p0=P.length,pth=[R.id,D.nr],pw=D.bplut.length*7+(D.bplut.length-1)*3.5;
-  D.bplut.forEach((q,i)=>{const T=CFG.plutonstyper[q.sp],x=ox+(BWID-4.6-pw)/2+i*10.5,pp=[...pth,BT.bataljon,q.bok];
-    if(T)grupperad(x,oy,pp,q.mob,T,q.tag);else pluton(x,oy,pp,q.mob,'spec',q.tag)});
-  D.komp.forEach((K,k)=>{const r=Math.floor(k/2),single=k===D.komp.length-1&&D.komp.length%2===1;
-    kompani(ox+(single?COLW/2:(k%2)*COLW),oy+19+r*21,[...pth,K.nr],K)});
-  const [x0,y0,x1,y1]=frameBox(f0,1,2);
-  const f=box(x0,y0,x1,y1,3,pth,3.1);f.label=`${D.nr}. ${D.namn}`;f.short=D.nr+'.';   // luft ovanför för plutonernas namn
-  BATS.push({p0,p1:P.length,f0,f1:F.length,reg:R.id,ll:D.ll,D});
+function bataljon(ox,oy,R,D){
+const f0=F.length,p0=P.length,pth=[R.id,D.nr],pw=D.bplut.length*7+(D.bplut.length-1)*3.5;
+D.bplut.forEach((q,i)=>{const T=CFG.plutonstyper[q.sp],x=ox+(BWID-4.6-pw)/2+i*10.5,pp=[...pth,BT.bataljon,q.bok];
+if(T)grupperad(x,oy,pp,q.mob,T,q.tag);else pluton(x,oy,pp,q.mob,'spec',q.tag)});
+D.komp.forEach((K,k)=>{const r=Math.floor(k/2),single=k===D.komp.length-1&&D.komp.length%2===1;
+kompani(ox+(single?COLW/2:(k%2)*COLW),oy+19+r*21,[...pth,K.nr],K)});
+const [x0,y0,x1,y1]=frameBox(f0,1,2);
+const f=box(x0,y0,x1,y1,3,pth,3.1);f.label=`${D.nr}. ${D.namn}`;f.short=D.nr+'.';
+BATS.push({p0,p1:P.length,f0,f1:F.length,reg:R.id,ll:D.ll,D});
 }
-// listan → bataljoner med kompanier, bataljonsplutoner och fordon (bandgående först till Grk/pionjär, sedan insatsplutonerna)
 function parseBat([nr,namn,mr,komp,spec,hjul,band,ll]){
-  const K=komp.split(',').map(s=>{const [n,typ]=s.trim().split(/\s+/);return {nr:+n,typ,mob:[],tropp:typ==='I'&&(CFG.troppKompanier==='alla'||CFG.troppKompanier.includes(+n))}});
-  const S=spec?spec.split(',').map(s=>s.trim()):[];
-  if(mr==='N'&&!S.includes('TOLO'))S.push('TOLO');   // TOLO-grupp i bataljonerna i MR N (D HV, H Hvbat 22)
-  const bp=[{tag:'Bataljonsstab',sp:'Stab',mob:null},{tag:'Ledningspluton',sp:'',mob:null},...S.map(sp=>({tag:CFG.plutonsnamn[sp]||sp,sp,mob:sp==='Båt'?'W':null}))];
-  const used=new Set();                           // två plutoner av samma slag får nästa lediga bokstav
-  bp.forEach(q=>{let b=BT.bataljonsplutoner[q.sp]||q.sp.charAt(0).toUpperCase();
-    if(used.has(b))b=[...'ABDFGHIJNORSVWYZ'].find(x=>!used.has(x));used.add(b);q.bok=b});
-  const slots=[];
-  S.forEach((sp,i)=>{if(sp!=='Båt'&&sp!=='TOLO')slots.push({pri:sp==='Grk'||sp==='Pionjär'?0:2,set:m=>bp[i+2].mob=m})});
-  for(const k of K){if(k.typ==='I')for(let p=0;p<4;p++)slots.push({pri:1,set:m=>k.mob[p]=m});else for(let p=0;p<4;p++)k.mob[p]=k.typ==='B'||k.typ==='U'?null:'W'}
-  slots.sort((a,b)=>a.pri-b.pri);let nb=band;for(const s of slots){s.set(nb>0?'B':'H');nb--}
-  return {nr,namn,mr,komp:K,bplut:bp,hjul,band,ll};
+const K=komp.split(',').map(s=>{const [n,typ]=s.trim().split(/\s+/);return {nr:+n,typ,mob:[],tropp:typ==='I'&&(CFG.troppKompanier==='alla'||CFG.troppKompanier.includes(+n))}});
+const S=spec?spec.split(',').map(s=>s.trim()):[];
+if(mr==='N'&&!S.includes('TOLO'))S.push('TOLO');
+const bp=[{tag:'Bataljonsstab',sp:'Stab',mob:null},{tag:'Ledningspluton',sp:'',mob:null},...S.map(sp=>({tag:CFG.plutonsnamn[sp]||sp,sp,mob:sp==='Båt'?'W':null}))];
+const used=new Set();
+bp.forEach(q=>{let b=BT.bataljonsplutoner[q.sp]||q.sp.charAt(0).toUpperCase();
+if(used.has(b))b=[...'ABDFGHIJNORSVWYZ'].find(x=>!used.has(x));used.add(b);q.bok=b});
+const slots=[];
+S.forEach((sp,i)=>{if(sp!=='Båt'&&sp!=='TOLO')slots.push({pri:sp==='Grk'||sp==='Pionjär'?0:2,set:m=>bp[i+2].mob=m})});
+for(const k of K){if(k.typ==='I')for(let p=0;p<4;p++)slots.push({pri:1,set:m=>k.mob[p]=m});else for(let p=0;p<4;p++)k.mob[p]=k.typ==='B'||k.typ==='U'?null:'W'}
+slots.sort((a,b)=>a.pri-b.pri);let nb=band;for(const s of slots){s.set(nb>0?'B':'H');nb--}
+return {nr,namn,mr,komp:K,bplut:bp,hjul,band,ll};
 }
 const BDEF=CFG.bataljoner.map(parseBat),RIDX=Object.fromEntries(CFG.regioner.map((r,i)=>[r.id,i]));
 const BMAP=new Map(BDEF.map(d=>[d.nr,d])),KMAP=new Map();
 for(const d of BDEF)for(const k of d.komp)KMAP.set(k.nr,k);
-{ const k=KMAP.get(CFG.egetKompani);if(k){k.typ='I';k.tropp=true;k.mob=[...CFG.egnaPlutoner,'H']} }   // 333 enligt kompaniet självt
-function regionSize(defs){                        // bataljonerna i rader om fyra; radhöjden efter den största bataljonen
-  const cols=Math.min(4,defs.length),rows=[];for(let i=0;i<defs.length;i+=cols)rows.push(defs.slice(i,i+cols));
-  const rh=rows.map(r=>Math.max(...r.map(d=>bH(Math.ceil(d.komp.length/2)))));
-  return {rows,rh,w:cols*(BWID+10)-10,h:rh.reduce((a,b)=>a+b,0)+(rows.length-1)*40};
+{ const k=KMAP.get(CFG.egetKompani);if(k){k.typ='I';k.tropp=true;k.mob=[...CFG.egnaPlutoner,'H']} }
+function regionSize(defs){
+const cols=Math.min(4,defs.length),rows=[];for(let i=0;i<defs.length;i+=cols)rows.push(defs.slice(i,i+cols));
+const rh=rows.map(r=>Math.max(...r.map(d=>bH(Math.ceil(d.komp.length/2)))));
+return {rows,rh,w:cols*(BWID+10)-10,h:rh.reduce((a,b)=>a+b,0)+(rows.length-1)*40};
 }
 function region(R,ox,oy,L,n){
-  const f0=F.length;let y=oy;
-  L.rows.forEach((row,r)=>{const rw=row.length*(BWID+10)-10;
-    row.forEach((D,i)=>bataljon(ox+(L.w-rw)/2+i*(BWID+10)+2.3,y+5.5,R,D));
-    y+=L.rh[r]+40});
-  const [x0,y0,x1,y1]=frameBox(f0,3);
-  const f=box(x0,y0,x1,y1,4,[R.id],40);f.label=`${R.namn} · ${n} bataljon${n===1?'':'er'}`;   // luft ovanför för || och bataljonsnummer
+const f0=F.length;let y=oy;
+L.rows.forEach((row,r)=>{const rw=row.length*(BWID+10)-10;
+row.forEach((D,i)=>bataljon(ox+(L.w-rw)/2+i*(BWID+10)+2.3,y+5.5,R,D));
+y+=L.rh[r]+40});
+const [x0,y0,x1,y1]=frameBox(f0,3);
+const f=box(x0,y0,x1,y1,4,[R.id],40);f.label=`${R.namn} · ${n} bataljon${n===1?'':'er'}`;
 }
-{ let y=0;                                        // regionerna i rader: N överst, V och M i mitten, S och P 18 nederst
-  for(const ids of CFG.orgRader){
-    const items=ids.map(id=>({R:CFG.regioner[RIDX[id]],defs:BDEF.filter(d=>d.mr===id)})).filter(o=>o.R&&o.defs.length).map(o=>({...o,L:regionSize(o.defs)}));
-    if(!items.length)continue;
-    let x=-(items.reduce((a,o)=>a+o.L.w,0)+(items.length-1)*60)/2;
-    for(const o of items){region(o.R,x,y,o.L,o.defs.length);x+=o.L.w+60}
-    y+=Math.max(...items.map(o=>o.L.h))+90;
-  }
+{ let y=0;
+for(const ids of CFG.orgRader){
+const items=ids.map(id=>({R:CFG.regioner[RIDX[id]],defs:BDEF.filter(d=>d.mr===id)})).filter(o=>o.R&&o.defs.length).map(o=>({...o,L:regionSize(o.defs)}));
+if(!items.length)continue;
+let x=-(items.reduce((a,o)=>a+o.L.w,0)+(items.length-1)*60)/2;
+for(const o of items){region(o.R,x,y,o.L,o.defs.length);x+=o.L.w+60}
+y+=Math.max(...items.map(o=>o.L.h))+90;
 }
-// enheternas mitt och storlek (för hur nya enheter glider in, och för uträkningarna)
+}
 const CEN=new Map(),FK=new Map();
 for(const p of P)for(let L=1;L<=5;L++){const k=p.path.slice(0,L).join('|');let c=CEN.get(k);if(!c)CEN.set(k,c=[1e9,1e9,-1e9,-1e9,0]);
-  c[0]=Math.min(c[0],p.bx);c[1]=Math.min(c[1],p.by);c[2]=Math.max(c[2],p.bx);c[3]=Math.max(c[3],p.by);c[4]++}
+c[0]=Math.min(c[0],p.bx);c[1]=Math.min(c[1],p.by);c[2]=Math.max(c[2],p.bx);c[3]=Math.max(c[3],p.by);c[4]++}
 for(const f of F)if(f.lvl===1)FK.set(f.path.join('|'),f);
 const sizeOf=path=>(CEN.get(path.join('|'))||[0,0,0,0,0])[4];
-
-// ===================== Beteckningar och sökning =====================
 const pad2=n=>String(n).padStart(2,'0');
 const regOf=id=>CFG.regioner[RIDX[id]];
 const isPre=(a,b)=>a.length<=b.length&&a.every((v,i)=>v===b[i]);
@@ -501,149 +432,104 @@ const AN=CFG.anrop||{},sig=(a,b)=>a&&b?(BOK[a]||a)+(BOK[b]||b):null;
 function batEgen(b){const x=AN.visa&&AN.bataljoner&&AN.bataljoner[b];return x?x.charAt(x.length-1):null}
 function anropBat(b){const x=AN.visa&&AN.bataljoner&&AN.bataljoner[b];return x&&x.length>1?sig(x.charAt(0),x.charAt(1)):null}
 function kompEgen(kg){if(!AN.visa)return null;if(AN.kompanier&&AN.kompanier[kg])return AN.kompanier[kg].charAt(0);
-  const K=KMAP.get(kg),D=K&&BDEF.find(d=>d.komp.includes(K)),i=D?[...D.komp].sort((a,b)=>a.nr-b.nr).indexOf(K):-1;
-  return i>=0?(AN.kompanibokstaver||'').charAt(i)||null:null}
+const K=KMAP.get(kg),D=K&&BDEF.find(d=>d.komp.includes(K)),i=D?[...D.komp].sort((a,b)=>a.nr-b.nr).indexOf(K):-1;
+return i>=0?(AN.kompanibokstaver||'').charAt(i)||null:null}
 function anropKomp(b,kg){return sigP(kompPar(b,kg))}
 const BPSP=new Map(),BPDUP=new Set();for(const d of BDEF){const sett=new Set();for(const q of d.bplut){BPSP.set(d.nr+'|'+q.bok,q.sp);if(sett.has(q.sp))BPDUP.add(d.nr+'|'+q.bok);sett.add(q.sp)}}
 const sigP=pr=>pr&&pr[0]&&pr[1]?(BOK[pr[0]]||pr[0])+(BOK[pr[1]]||pr[1]):null;
 function batPar(b){const x=AN.visa&&AN.bataljoner&&AN.bataljoner[b];return x&&x.length>1?[x.charAt(0),x.charAt(1)]:null}
 function kompPar(b,kg){const x=AN.visa&&AN.kompanier&&AN.kompanier[kg];if(x&&x.length>1)return [x.charAt(0),x.charAt(1)];const k=kompEgen(kg),e=batEgen(b);return k&&e?[k,e]:null}
-function enhetPar(path){                          // två bokstäver för pluton/tropp/bataljonsdel, eller kompaniet för kompaniledningen
-  const [r,b,kg,u]=path;if(!AN.visa)return null;
-  if(kg===BT.bataljon){const rule=(AN.bataljonsdelar||{})[BPSP.get(b+'|'+u)];if(!rule)return null;
-    if(rule==='=')return batPar(b);
-    const y=rule.charAt(1)==='*'?batEgen(b):rule.charAt(1)==='#'?(AN.rsBokstav||{})[r]:rule.charAt(1);
-    return y?[BPDUP.has(b+'|'+u)?'W':rule.charAt(0),y]:null}   // en andra del av samma slag får reservbokstaven W
-  if(u===BT.kompaniledning)return kompPar(b,kg);
-  const k=kompEgen(kg);return k?[u,k]:null;
+function enhetPar(path){
+const [r,b,kg,u]=path;if(!AN.visa)return null;
+if(kg===BT.bataljon){const rule=(AN.bataljonsdelar||{})[BPSP.get(b+'|'+u)];if(!rule)return null;
+if(rule==='=')return batPar(b);
+const y=rule.charAt(1)==='*'?batEgen(b):rule.charAt(1)==='#'?(AN.rsBokstav||{})[r]:rule.charAt(1);
+return y?[BPDUP.has(b+'|'+u)?'W':rule.charAt(0),y]:null}
+if(u===BT.kompaniledning)return kompPar(b,kg);
+const k=kompEgen(kg);return k?[u,k]:null;
 }
-function gruppPar(path){                          // grupp/tropp: egen bokstav + plutonens första bokstav
-  const [,b,kg,u,row]=path;if(row==='-'||row===BT.plutonsledning)return null;
-  const e=enhetPar(path);if(!e)return null;
-  if(kg===BT.bataljon){const sp=BPSP.get(b+'|'+u);if(sp==='Stab')return null;
-    if(sp===''){const i=[...BT.grupper,...BT.extraGrupper].indexOf(row);return [(AN.ledningspluton||[])[i]||row,e[0]]}}
-  return [row,e[0]];
+function gruppPar(path){
+const [,b,kg,u,row]=path;if(row==='-'||row===BT.plutonsledning)return null;
+const e=enhetPar(path);if(!e)return null;
+if(kg===BT.bataljon){const sp=BPSP.get(b+'|'+u);if(sp==='Stab')return null;
+if(sp===''){const i=[...BT.grupper,...BT.extraGrupper].indexOf(row);return [(AN.ledningspluton||[])[i]||row,e[0]]}}
+return [row,e[0]];
 }
-function anropEnhet(path){return sigP(enhetPar(path))}                       // BertilSigurd
-function anropLed(path){return sigP(gruppPar(path))}                         // ErikBertil
-function anropNr(p){                              // befattningsnummer efter signalen (FAL-A 1.4.3 och 4.4.6)
-  const [,b,kg,u,row,i]=p.path;
-  if(kg===BT.bataljon&&BPSP.get(b+'|'+u)==='Stab'){
-    if(row===BT.plutonsledning)return [1,2,4][i]||5+i;                      // BC 1, stf BC 2, BF 4
-    const g=[...BT.grupper,...BT.extraGrupper].indexOf(row);return [11,21,31,41,61][g]+i}   // S1 11–, S2 21–, S3/5 31–, S4 41–, S6 61–
-  if(p.kl)return [1,2,4,5,6,7,8,9][i]||i+1;                                 // KC 1, stf KC 2, KF 4, övriga 5–9
-  if(row===BT.plutonsledning)return i<3?i+1:11+(i-3);                        // chef 1, stf 2, stf 2 3, specialsoldater 11, 12 …
-  return i+1;                                                                // gruppchef 1, stf 2, soldater 3, 4 …
+function anropEnhet(path){return sigP(enhetPar(path))}
+function anropLed(path){return sigP(gruppPar(path))}
+function anropNr(p){
+const [,b,kg,u,row,i]=p.path;
+if(kg===BT.bataljon&&BPSP.get(b+'|'+u)==='Stab'){
+if(row===BT.plutonsledning)return [1,2,4][i]||5+i;
+const g=[...BT.grupper,...BT.extraGrupper].indexOf(row);return [11,21,31,41,61][g]+i}
+if(p.kl)return [1,2,4,5,6,7,8,9][i]||i+1;
+if(row===BT.plutonsledning)return i<3?i+1:11+(i-3);
+return i+1;
 }
-function anrop(p){                                // t.ex. ErikBertil 5
-  const [,b,kg,u,row]=p.path;
-  const bas=kg===BT.bataljon&&BPSP.get(b+'|'+u)==='Stab'?sigP(batPar(b)):(row==='-'||row===BT.plutonsledning)?anropEnhet(p.path):anropLed(p.path);
-  return bas?bas+' '+anropNr(p):null;
-}
-function anropId(p){                              // identifieringsbeteckning (FAL-A 1.1): signalen + kompaniets, t.ex. EBSM5
-  const a=anrop(p);if(!a)return null;const [,b,kg]=p.path,k=kg===BT.bataljon?batPar(b):kompPar(b,kg);
-  const kort=x=>x.replace(/[a-zåäö]/g,'');return kort(a.split(' ')[0])+(k?k.join(''):'')+a.split(' ')[1];
-}
-function anropFull(p){                            // fullständigt anrop uppifrån, t.ex. [MR S] ViktorMartin SigurdMartin AdamSigurd ErikAdam 1
-  if(!anrop(p))return null;const [r,b,kg]=p.path,x=(AN.regioner||{})[r];
-  const mr=x&&x.length>1?sigP([x.charAt(0),x.charAt(1)]):'['+regOf(r).namn+']';
-  const d=[mr,anropBat(b),kg===BT.bataljon?null:anropKomp(b,kg),anropEnhet(p.path),anropLed(p.path)].filter(Boolean);
-  return d.filter((v,i)=>v!==d[i-1]).join(' ')+' '+anropNr(p);
+function anrop(p){
+const [,b,kg,u,row]=p.path;
+const bas=kg===BT.bataljon&&BPSP.get(b+'|'+u)==='Stab'?sigP(batPar(b)):(row==='-'||row===BT.plutonsledning)?anropEnhet(p.path):anropLed(p.path);
+return bas?bas+' '+anropNr(p):null;
 }
 function betText(p){const [r,b,kg,u,row,i]=p.path;
-  return [regOf(r).namn,b,kg,anropEnhet(p.path)||BOK[u]||u,row==='-'||row===BT.plutonsledning?null:(anropLed(p.path)||BOK[row]||row),pad2(i+1)].filter(v=>v!==null).join(' · ')}
+return [regOf(r).namn,b,kg,anropEnhet(p.path)||BOK[u]||u,row==='-'||row===BT.plutonsledning?null:(anropLed(p.path)||BOK[row]||row),pad2(i+1)].filter(v=>v!==null).join(' · ')}
 function betKod(p){const [,b,kg,u,row,i]=p.path;return [b,kg,u,row==='-'?null:row,pad2(i+1)].filter(v=>v!==null).join('-')}
 function befattning(p){
-  if(p.kl)return ({KC:'Kompanichef','stf KC':'Stf kompanichef',KF:'Kompaniförvaltare'})[p.tag]||'Kompaniledningen';
-  if(p.tr&&p.led)return 'Troppchef';
-  if(p.tag&&p.path[2]===BT.bataljon)return ({BC:'Bataljonschef','stf BC':'Stf bataljonschef',BF:'Bataljonsförvaltare'})[p.tag]||p.tag;
-  if(p.led&&p.path[2]===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));if(f&&f.typ)return (p.role==='chef'?'Chef':p.role==='stf'?'Stf chef':'Chefsgruppen')+' · '+f.tag}
-  if(p.led)return p.role==='chef'?'Plutonchef':p.role==='stf'?'Stf plutonchef':'Plutonsledningen';
-  return (p.role==='chef'?'Gruppchef':p.role==='stf'?'Stf gruppchef':'Soldat')+(p.gnamn?' · '+p.gnamn:'');
+if(p.kl)return ({KC:'Kompanichef','stf KC':'Stf kompanichef',KF:'Kompaniförvaltare'})[p.tag]||'Kompaniledningen';
+if(p.tr&&p.led)return 'Troppchef';
+if(p.tag&&p.path[2]===BT.bataljon)return ({BC:'Bataljonschef','stf BC':'Stf bataljonschef',BF:'Bataljonsförvaltare'})[p.tag]||p.tag;
+if(p.led&&p.path[2]===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));if(f&&f.typ)return (p.role==='chef'?'Chef':p.role==='stf'?'Stf chef':'Chefsgruppen')+' · '+f.tag}
+if(p.led)return p.role==='chef'?'Plutonchef':p.role==='stf'?'Stf plutonchef':'Plutonsledningen';
+return (p.role==='chef'?'Gruppchef':p.role==='stf'?'Stf gruppchef':'Soldat')+(p.gnamn?' · '+p.gnamn:'');
 }
 function kompNamn(K){return `${K.nr}. ${CFG.kompaninamn[K.typ]||K.typ}`}
 function medAnrop(txt,a){return a?`${txt} (${a})`:txt}
-function enhetNamn(p){
-  const [r,b,kg,u]=p.path,D=BMAP.get(b);
-  if(kg===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));return `${f.tag} · ${D.nr}. ${D.namn}`}
-  const K=KMAP.get(kg),aE=anropEnhet(p.path),del=p.kl?'Kompaniledningen':p.tr?medAnrop('Troppen',aE):`Pluton ${aE||BOK[u]||u}`;
-  return `${del} · ${medAnrop(kompNamn(K),anropKomp(b,kg))} · ${D.nr}. ${D.namn}`;
-}
-const KOD=new Map();for(const p of P)KOD.set(betKod(p).toLowerCase(),p);
-function tokens(p){
-  if(p.tok)return p.tok;
-  const [r,b,kg,u,row,i]=p.path,t=[String(b),String(kg).toLowerCase(),u.toLowerCase(),(BOK[u]||'').toLowerCase(),pad2(i+1),String(i+1),r.toLowerCase()];
-  if(row!=='-')t.push(row.toLowerCase(),(BOK[row]||'').toLowerCase());
-  for(const a of [anropLed(p.path),anropEnhet(p.path),anropKomp(b,kg),anropBat(b)])if(a){t.push(a.toLowerCase(),a.replace(/[^A-ZÅÄÖ]/g,'').toLowerCase())}
-  {const a=anrop(p),id=anropId(p);if(a)t.push(String(anropNr(p)));if(id)t.push(id.toLowerCase(),id.replace(/[0-9]/g,'').toLowerCase())}
-  for(const w of (befattning(p)+' '+(p.tag||'')).toLowerCase().split(/[\s·]+/))if(w)t.push(w);
-  if(kg===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));for(const w of f.tag.toLowerCase().split(/[\s-]+/))t.push(w)}
-  return p.tok=t.filter(Boolean);
-}
-function sok(q){
-  const ord=(q.toLowerCase().replace(/[·.,\/]/g,' ').match(/[0-9]+|[a-zåäö]+/g)||[]).filter(w=>w!=='mr');
-  if(!ord.length)return [];
-  const direkt=KOD.get(q.trim().toLowerCase().replace(/[\s·]+/g,'-'));
-  const out=[];
-  for(const p of P){let sc=0,ok=true;const t=tokens(p);
-    for(const w of ord){let m=0;
-      for(const k of t){if(k===w){m=2;break}if(w.length>=2&&isNaN(w)&&k.startsWith(w))m=1}
-      if(!m){ok=false;break}sc+=m}
-    if(ok)out.push([sc+(p===direkt?99:0),p]);
-  }
-  out.sort((a,b)=>b[0]-a[0]);
-  return out.slice(0,60).map(x=>x[1]);
-}
-
-// ===================== Geografi (förenklad Sverigekarta; 1 enhet = 0,4 km) =====================
-const KM=.4,ANK=[57.68,14.90];                    // kartans fasta ankare; den valda bataljonens ort läggs i origo
+const KM=.4,ANK=[57.68,14.90];
 const geoA=(lat,lon)=>[(lon-ANK[1])*Math.cos(lat*Math.PI/180)*111.32/KM,-(lat-ANK[0])*110.57/KM];
 let GEO0=[0,0];
 const geo=(lat,lon)=>{const g=geoA(lat,lon);return [g[0]-GEO0[0],g[1]-GEO0[1]]};
 const SVERIGE=[[58.93,11.17],[59.10,11.40],[59.45,11.75],[59.88,12.30],[60.20,12.55],[60.60,12.60],[61.05,12.70],[61.35,12.35],[61.75,12.30],[62.10,12.15],[62.55,12.10],[63.00,12.05],[63.35,12.10],[63.70,12.50],[64.10,13.50],[64.45,14.10],[64.80,13.95],[65.20,14.30],[65.65,14.55],[66.05,15.05],[66.45,15.45],[66.90,16.05],[67.25,16.30],[67.55,16.55],[67.95,17.35],[68.30,18.00],[68.45,18.70],[68.55,19.60],[68.85,20.20],[69.06,20.55],
-  [68.80,20.95],[68.55,21.70],[68.40,22.40],[68.15,23.10],[67.90,23.60],[67.45,23.75],[67.10,23.60],[66.75,23.90],[66.35,23.70],[66.05,24.05],[65.83,24.15],
-  [65.80,23.40],[65.65,22.60],[65.50,22.10],[65.25,21.55],[64.95,21.35],[64.70,21.25],[64.40,21.05],[64.05,20.75],[63.80,20.35],[63.55,19.75],[63.30,18.85],[63.05,18.55],[62.75,17.95],[62.40,17.45],[62.05,17.40],[61.70,17.20],[61.30,17.20],[60.95,17.30],[60.65,17.25],[60.50,17.80],[60.35,18.45],[60.10,18.85],[59.80,19.00],[59.45,18.95],[59.15,18.40],[58.90,17.95],[58.70,17.40],[58.60,16.85],[58.25,16.85],[57.95,16.70],[57.70,16.70],[57.30,16.55],[56.95,16.45],[56.65,16.40],[56.35,16.05],[56.15,15.60],[56.12,15.00],[56.03,14.60],[55.92,14.30],[55.75,14.33],[55.55,14.35],[55.42,13.90],[55.38,13.35],[55.36,13.10],[55.48,12.85],[55.62,12.95],[55.85,12.80],[56.05,12.65],[56.28,12.45],[56.40,12.75],[56.65,12.80],[56.90,12.45],[57.10,12.22],[57.40,12.00],[57.70,11.80],[58.00,11.65],[58.30,11.30],[58.60,11.18]];
+[68.80,20.95],[68.55,21.70],[68.40,22.40],[68.15,23.10],[67.90,23.60],[67.45,23.75],[67.10,23.60],[66.75,23.90],[66.35,23.70],[66.05,24.05],[65.83,24.15],
+[65.80,23.40],[65.65,22.60],[65.50,22.10],[65.25,21.55],[64.95,21.35],[64.70,21.25],[64.40,21.05],[64.05,20.75],[63.80,20.35],[63.55,19.75],[63.30,18.85],[63.05,18.55],[62.75,17.95],[62.40,17.45],[62.05,17.40],[61.70,17.20],[61.30,17.20],[60.95,17.30],[60.65,17.25],[60.50,17.80],[60.35,18.45],[60.10,18.85],[59.80,19.00],[59.45,18.95],[59.15,18.40],[58.90,17.95],[58.70,17.40],[58.60,16.85],[58.25,16.85],[57.95,16.70],[57.70,16.70],[57.30,16.55],[56.95,16.45],[56.65,16.40],[56.35,16.05],[56.15,15.60],[56.12,15.00],[56.03,14.60],[55.92,14.30],[55.75,14.33],[55.55,14.35],[55.42,13.90],[55.38,13.35],[55.36,13.10],[55.48,12.85],[55.62,12.95],[55.85,12.80],[56.05,12.65],[56.28,12.45],[56.40,12.75],[56.65,12.80],[56.90,12.45],[57.10,12.22],[57.40,12.00],[57.70,11.80],[58.00,11.65],[58.30,11.30],[58.60,11.18]];
 const OLAND=[[56.20,16.40],[56.45,16.45],[56.70,16.62],[57.00,16.90],[57.37,17.08],[57.30,16.98],[56.95,16.75],[56.60,16.55],[56.30,16.42]];
 const GOTLAND=[[56.92,18.13],[57.10,18.10],[57.35,18.12],[57.64,18.28],[57.85,18.65],[57.95,18.90],[57.92,19.30],[57.75,19.05],[57.55,18.95],[57.40,18.90],[57.20,18.70],[57.02,18.40]];
 const SJOAR=[
-  [[58.38,12.32],[58.58,12.45],[58.85,12.62],[59.10,12.75],[59.30,13.10],[59.38,13.45],[59.32,13.85],[59.28,14.10],[59.05,14.05],[58.78,13.88],[58.62,13.70],[58.68,13.40],[58.52,13.15],[58.45,12.75]],   // Vänern
-  [[57.78,14.14],[58.05,14.30],[58.35,14.45],[58.62,14.55],[58.85,14.72],[58.88,14.92],[58.70,14.88],[58.45,14.75],[58.15,14.62],[57.90,14.40]],                                         // Vättern
-  [[59.32,17.90],[59.40,17.55],[59.52,17.20],[59.60,16.80],[59.55,16.20],[59.42,16.25],[59.35,16.75],[59.28,17.25],[59.24,17.60]]                                                          // Mälaren
+[[58.38,12.32],[58.58,12.45],[58.85,12.62],[59.10,12.75],[59.30,13.10],[59.38,13.45],[59.32,13.85],[59.28,14.10],[59.05,14.05],[58.78,13.88],[58.62,13.70],[58.68,13.40],[58.52,13.15],[58.45,12.75]],
+[[57.78,14.14],[58.05,14.30],[58.35,14.45],[58.62,14.55],[58.85,14.72],[58.88,14.92],[58.70,14.88],[58.45,14.75],[58.15,14.62],[57.90,14.40]],
+[[59.32,17.90],[59.40,17.55],[59.52,17.20],[59.60,16.80],[59.55,16.20],[59.42,16.25],[59.35,16.75],[59.28,17.25],[59.24,17.60]]
 ];
 const toXY=poly=>poly.map(([a,b])=>geoA(a,b));
-function raster(polys,cell,margin){               // jämn–udda-fyllning + avståndstransform → signerat avstånd (enheter)
-  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  for(const p of polys)for(const [x,y] of p){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}
-  x0-=margin;y0-=margin;x1+=margin;y1+=margin;
-  const nx=Math.ceil((x1-x0)/cell)+1,ny=Math.ceil((y1-y0)/cell)+1,m=new Uint8Array(nx*ny);
-  for(let j=0;j<ny;j++){
-    const y=y0+j*cell,xs=[];
-    for(const p of polys)for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])/(b[1]-a[1])*(b[0]-a[0]))}
-    xs.sort((a,b)=>a-b);
-    for(let q=0;q+1<xs.length;q+=2)for(let i=Math.max(0,Math.ceil((xs[q]-x0)/cell));i<=Math.min(nx-1,Math.floor((xs[q+1]-x0)/cell));i++)m[j*nx+i]=1;
-  }
-  const d=new Float32Array(nx*ny);
-  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const k=j*nx+i,v=m[k];
-    d[k]=(i>0&&m[k-1]!==v)||(i<nx-1&&m[k+1]!==v)||(j>0&&m[k-nx]!==v)||(j<ny-1&&m[k+nx]!==v)?0:1e6}
-  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const k=j*nx+i;let v=d[k];
-    if(i>0)v=Math.min(v,d[k-1]+1);if(j>0){v=Math.min(v,d[k-nx]+1);if(i>0)v=Math.min(v,d[k-nx-1]+1.414);if(i<nx-1)v=Math.min(v,d[k-nx+1]+1.414)}d[k]=v}
-  for(let j=ny-1;j>=0;j--)for(let i=nx-1;i>=0;i--){const k=j*nx+i;let v=d[k];
-    if(i<nx-1)v=Math.min(v,d[k+1]+1);if(j<ny-1){v=Math.min(v,d[k+nx]+1);if(i<nx-1)v=Math.min(v,d[k+nx+1]+1.414);if(i>0)v=Math.min(v,d[k+nx-1]+1.414)}d[k]=v}
-  for(let k=0;k<d.length;k++)d[k]=(m[k]?1:-1)*d[k]*cell;
-  return {x0,y0,cell,nx,ny,d};
+function raster(polys,cell,margin){
+let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+for(const p of polys)for(const [x,y] of p){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}
+x0-=margin;y0-=margin;x1+=margin;y1+=margin;
+const nx=Math.ceil((x1-x0)/cell)+1,ny=Math.ceil((y1-y0)/cell)+1,m=new Uint8Array(nx*ny);
+for(let j=0;j<ny;j++){
+const y=y0+j*cell,xs=[];
+for(const p of polys)for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];if((a[1]>y)!==(b[1]>y))xs.push(a[0]+(y-a[1])/(b[1]-a[1])*(b[0]-a[0]))}
+xs.sort((a,b)=>a-b);
+for(let q=0;q+1<xs.length;q+=2)for(let i=Math.max(0,Math.ceil((xs[q]-x0)/cell));i<=Math.min(nx-1,Math.floor((xs[q+1]-x0)/cell));i++)m[j*nx+i]=1;
+}
+const d=new Float32Array(nx*ny);
+for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const k=j*nx+i,v=m[k];
+d[k]=(i>0&&m[k-1]!==v)||(i<nx-1&&m[k+1]!==v)||(j>0&&m[k-nx]!==v)||(j<ny-1&&m[k+nx]!==v)?0:1e6}
+for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const k=j*nx+i;let v=d[k];
+if(i>0)v=Math.min(v,d[k-1]+1);if(j>0){v=Math.min(v,d[k-nx]+1);if(i>0)v=Math.min(v,d[k-nx-1]+1.414);if(i<nx-1)v=Math.min(v,d[k-nx+1]+1.414)}d[k]=v}
+for(let j=ny-1;j>=0;j--)for(let i=nx-1;i>=0;i--){const k=j*nx+i;let v=d[k];
+if(i<nx-1)v=Math.min(v,d[k+1]+1);if(j<ny-1){v=Math.min(v,d[k+nx]+1);if(i<nx-1)v=Math.min(v,d[k+nx+1]+1.414);if(i>0)v=Math.min(v,d[k+nx-1]+1.414)}d[k]=v}
+for(let k=0;k<d.length;k++)d[k]=(m[k]?1:-1)*d[k]*cell;
+return {x0,y0,cell,nx,ny,d};
 }
 function sdAt(R,x,y){
-  const gx=(x-R.x0)/R.cell,gy=(y-R.y0)/R.cell,i=Math.floor(gx),j=Math.floor(gy);
-  if(i<0||j<0||i>=R.nx-1||j>=R.ny-1)return -1e4;
-  const fx=gx-i,fy=gy-j,k=j*R.nx+i,d=R.d;
-  return (d[k]*(1-fx)+d[k+1]*fx)*(1-fy)+(d[k+R.nx]*(1-fx)+d[k+R.nx+1]*fx)*fy;
+const gx=(x-R.x0)/R.cell,gy=(y-R.y0)/R.cell,i=Math.floor(gx),j=Math.floor(gy);
+if(i<0||j<0||i>=R.nx-1||j>=R.ny-1)return -1e4;
+const fx=gx-i,fy=gy-j,k=j*R.nx+i,d=R.d;
+return (d[k]*(1-fx)+d[k+1]*fx)*(1-fy)+(d[k+R.nx]*(1-fx)+d[k+R.nx+1]*fx)*fy;
 }
 const LANDP=[toXY(SVERIGE),toXY(OLAND),toXY(GOTLAND)];
 const SJOXY=SJOAR.map(toXY),LAND=raster(LANDP,4,120),LAKES=raster(SJOXY,2,30);
 const SWE=(()=>{let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of LANDP)for(const [x,y] of p){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}return {x0,y0,x1,y1}})();
-
-// ===================== Den valda soldaten =====================
-const DU={x:0,y:0,steps:[LASTORG,ZOOM,...CARDS]}; // Du-skylten: hela hemvärnet, slutet av inzoomningen och korten
+const DU={x:0,y:0,steps:[LASTORG,ZOOM,...CARDS]};
 const ELS=[...P,...F,DU];
 let ME=null,OWNBAT=null,OWNREG='',FORBAND='',ORTER=[],INZ=[],INZ_N=[],ROLLER=[];
 const CALC=[];
@@ -652,715 +538,572 @@ const visAt=(e,n)=>e.steps?(e.steps.includes(n)?1:0):(e.lvl===4&&isMap(n))?0:(e.
 const dispAt=(e,n)=>{let d=[0,0];if(e.disp)for(const [s,x,y] of e.disp)if(s<=n)d=[x,y];if(e.geo&&isMap(n))d=[d[0]+e.geo[0],d[1]+e.geo[1]];return d};
 const count=n=>P.reduce((a,p)=>a+visAt(p,n),0);
 const fmt=v=>v.toLocaleString('sv-SE');
-
 function valj(me){
-  ME=me;const ox=me.bx,oy=me.by,sp=me.path;
-  for(const p of P){p.x=p.bx-ox;p.y=p.by-oy;p.own=p===me}
-  for(const f of F){f.x0=f.bx0-ox;f.y0=f.by0-oy;f.x1=f.bx1-ox;f.y1=f.by1-oy;f.own=isPre(f.path,sp)}
-  const C=(path,L)=>{const c=CEN.get(path.slice(0,L).join('|'));return [(c[0]+c[2])/2-ox,(c[1]+c[3])/2-oy]};
-  const pi=(me.ri^1)<me.rn?me.ri^1:me.ri-1;       // stridsparskamraten
-  // vilket steg varje del dyker upp i: ju längre den delar väg med soldaten, desto tidigare
-  for(const e of [...P,...F]){
-    const pa=e.path;let d=0;while(d<pa.length&&pa[d]===sp[d])d++;
-    let s=d>=6?0:[8,7,6,5,4,3][d];
-    if(d===5&&pa.length===6)s=e.ri===pi?1:e.blk===me.blk?2:3;
-    e.step=s;e.disp=null;e.enter=null;e.seq=undefined;e.geo=null;
-  }
-  // varifrån de nya kommer: stridsparet och omgången ställer sig en bit ifrån och går ihop, resten av ledet glider in från sidan
-  for(const p of P)if(p.step>=1&&p.step<=3){const sg=Math.sign(p.bx-me.bx)||1;
-    if(p.step===1)p.disp=[[1,sg,0],[2,0,0]];else if(p.step===2)p.disp=[[2,sg,0],[3,0,0]];else p.enter=[sg*1.6,0]}
-  { const seq=P.filter(p=>p.step===4).sort((a,b)=>(!!a.led-!!b.led)||(a.by-b.by)||(a.bx-b.bx));   // enheten fylls på en soldat i taget
-    seq.forEach((p,i)=>{p.seq=i;p.enter=[0,-.5]});
-    for(const f of F)if(f.step===4){
-      const row=f.lvl===0?seq.find(p=>Math.abs(p.by-(f.by0+f.by1)/2)<.01&&p.bx>=f.bx0&&p.bx<=f.bx1):null;
-      f.seq=row?row.seq:seq.length-1;f.enter=[0,-.5];
-    }}
-  const LV={5:4,6:3,7:2,8:1},KF={5:.3,6:.22,7:.12,8:.08};   // större enheter glider in utifrån
-  for(const e of [...P,...F]){const s=e.step;if(s<5)continue;
-    if(e.kl&&s===5){e.enter=[0,-1.5];continue}
-    if(isPre(e.path,sp))continue;
-    const u=C(e.path,LV[s]),o=C(sp,LV[s]);e.enter=[(u[0]-o[0])*KF[s],(u[1]-o[1])*KF[s]];
-  }
-  for(const p of P)p.ownK=p.step<=5;
-  // namn
-  OWNREG=sp[0];OWNBAT=BMAP.get(sp[1]);
-  const K=sp[2]===BT.bataljon?null:KMAP.get(sp[2]);
-  FORBAND=K?kompNamn(K):`${OWNBAT.nr}. ${OWNBAT.namn}`;
-  for(const f of F)if(f.lvl===2)f.label=f.own?kompNamn(f.K):`${f.K.nr} · ${CFG.kompanityper[f.K.typ]||f.K.typ}`;
-  // kartan: bataljonens ort i origo, de andra bataljonerna till sina platser; överlappande puttas isär
-  const ho=CFG.hemorter[OWNBAT.nr],pl=ho?[ho[1],ho[2]]:OWNBAT.ll;
-  {const g=geoA(pl[0],pl[1]);GEO0=[g[0]-CFG.ortForskjutning[0],g[1]-CFG.ortForskjutning[1]]}mapKey='';
-  ORTER=[...CFG.orter.filter(o=>!ho||o[0]!==ho[0]),[ho?ho[0]:OWNBAT.namn,pl[0],pl[1],true]];
-  { const M=5,B=BATS.map(b=>{const f=F[b.f1-1],cx=(f.x0+f.x1)/2,cy=(f.y0+f.y1)/2,own=b.D===OWNBAT,tg=own?[cx,cy]:geo(b.ll[0],b.ll[1]);
-      return {b,cx,cy,x:tg[0],y:tg[1],w:f.x1-f.x0,h:f.y1-f.y0,fix:own}});
-    for(let it=0;it<600;it++){let moved=false;
-      for(let i=0;i<B.length;i++)for(let j=i+1;j<B.length;j++){const a=B[i],b=B[j];
-        const ox=(a.w+b.w)/2+M-Math.abs(a.x-b.x),oy=(a.h+b.h)/2+M-Math.abs(a.y-b.y);if(ox<=0||oy<=0)continue;moved=true;
-        const wa=a.fix?0:b.fix?1:.5,wb=1-wa;
-        if(ox<oy){const s=a.x<b.x?-1:1;a.x+=s*ox*wa;b.x-=s*ox*wb}else{const s=a.y<b.y?-1:1;a.y+=s*oy*wa;b.y-=s*oy*wb}}
-      if(!moved)break}
-    for(const o of B){if(o.fix)continue;const b=o.b,g=[o.x-o.cx,o.y-o.cy];
-      for(let i=b.p0;i<b.p1;i++)P[i].geo=g;for(let i=b.f0;i<b.f1;i++)F[i].geo=g}
-  }
-  fyllTexter(K);
-  $('eyebrow').textContent=FORBAND+' · Från soldat till hemvärnet';
+ME=me;const ox=me.bx,oy=me.by,sp=me.path;
+for(const p of P){p.x=p.bx-ox;p.y=p.by-oy;p.own=p===me}
+for(const f of F){f.x0=f.bx0-ox;f.y0=f.by0-oy;f.x1=f.bx1-ox;f.y1=f.by1-oy;f.own=isPre(f.path,sp)}
+const C=(path,L)=>{const c=CEN.get(path.slice(0,L).join('|'));return [(c[0]+c[2])/2-ox,(c[1]+c[3])/2-oy]};
+const pi=(me.ri^1)<me.rn?me.ri^1:me.ri-1;
+for(const e of [...P,...F]){
+const pa=e.path;let d=0;while(d<pa.length&&pa[d]===sp[d])d++;
+let s=d>=6?0:[8,7,6,5,4,3][d];
+if(d===5&&pa.length===6)s=e.ri===pi?1:e.blk===me.blk?2:3;
+e.step=s;e.disp=null;e.enter=null;e.seq=undefined;e.geo=null;
 }
-
-// ===================== Texterna för den valda soldaten =====================
+for(const p of P)if(p.step>=1&&p.step<=3){const sg=Math.sign(p.bx-me.bx)||1;
+if(p.step===1)p.disp=[[1,sg,0],[2,0,0]];else if(p.step===2)p.disp=[[2,sg,0],[3,0,0]];else p.enter=[sg*1.6,0]}
+{ const seq=P.filter(p=>p.step===4).sort((a,b)=>(!!a.led-!!b.led)||(a.by-b.by)||(a.bx-b.bx));
+seq.forEach((p,i)=>{p.seq=i;p.enter=[0,-.5]});
+for(const f of F)if(f.step===4){
+const row=f.lvl===0?seq.find(p=>Math.abs(p.by-(f.by0+f.by1)/2)<.01&&p.bx>=f.bx0&&p.bx<=f.bx1):null;
+f.seq=row?row.seq:seq.length-1;f.enter=[0,-.5];
+}}
+const LV={5:4,6:3,7:2,8:1},KF={5:.3,6:.22,7:.12,8:.08};
+for(const e of [...P,...F]){const s=e.step;if(s<5)continue;
+if(e.kl&&s===5){e.enter=[0,-1.5];continue}
+if(isPre(e.path,sp))continue;
+const u=C(e.path,LV[s]),o=C(sp,LV[s]);e.enter=[(u[0]-o[0])*KF[s],(u[1]-o[1])*KF[s]];
+}
+for(const p of P)p.ownK=p.step<=5;
+OWNREG=sp[0];OWNBAT=BMAP.get(sp[1]);
+const K=sp[2]===BT.bataljon?null:KMAP.get(sp[2]);
+FORBAND=K?kompNamn(K):`${OWNBAT.nr}. ${OWNBAT.namn}`;
+for(const f of F)if(f.lvl===2)f.label=f.own?kompNamn(f.K):`${f.K.nr} · ${CFG.kompanityper[f.K.typ]||f.K.typ}`;
+const ho=CFG.hemorter[OWNBAT.nr],pl=ho?[ho[1],ho[2]]:OWNBAT.ll;
+{const g=geoA(pl[0],pl[1]);GEO0=[g[0]-CFG.ortForskjutning[0],g[1]-CFG.ortForskjutning[1]]}mapKey='';
+ORTER=[...CFG.orter.filter(o=>!ho||o[0]!==ho[0]),[ho?ho[0]:OWNBAT.namn,pl[0],pl[1],true]];
+{ const M=5,B=BATS.map(b=>{const f=F[b.f1-1],cx=(f.x0+f.x1)/2,cy=(f.y0+f.y1)/2,own=b.D===OWNBAT,tg=own?[cx,cy]:geo(b.ll[0],b.ll[1]);
+return {b,cx,cy,x:tg[0],y:tg[1],w:f.x1-f.x0,h:f.y1-f.y0,fix:own}});
+for(let it=0;it<600;it++){let moved=false;
+for(let i=0;i<B.length;i++)for(let j=i+1;j<B.length;j++){const a=B[i],b=B[j];
+const ox=(a.w+b.w)/2+M-Math.abs(a.x-b.x),oy=(a.h+b.h)/2+M-Math.abs(a.y-b.y);if(ox<=0||oy<=0)continue;moved=true;
+const wa=a.fix?0:b.fix?1:.5,wb=1-wa;
+if(ox<oy){const s=a.x<b.x?-1:1;a.x+=s*ox*wa;b.x-=s*ox*wb}else{const s=a.y<b.y?-1:1;a.y+=s*oy*wa;b.y-=s*oy*wb}}
+if(!moved)break}
+for(const o of B){if(o.fix)continue;const b=o.b,g=[o.x-o.cx,o.y-o.cy];
+for(let i=b.p0;i<b.p1;i++)P[i].geo=g;for(let i=b.f0;i<b.f1;i++)F[i].geo=g}
+}
+fyllTexter(K);
+$('eyebrow').textContent=FORBAND+' · Från soldat till hemvärnet';
+}
 const EN=['inga','en','två','tre','fyra','fem','sex','sju','åtta','nio','tio','elva','tolv'],ETT=['inga','ett','två','tre','fyra','fem','sex','sju','åtta'];
 const lista=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' och '+a[a.length-1];
 const stor=s=>s.charAt(0).toUpperCase()+s.slice(1);
-function mobText(mobs){                           // "två hjulgående och en bandgående" / "alla hjulgående"
-  const h=mobs.filter(m=>m==='H').length,b=mobs.filter(m=>m==='B').length;
-  if(!h&&!b)return '';if(!b)return 'alla hjulgående';if(!h)return 'alla bandgående';
-  return `${EN[h]} hjulgående och ${EN[b]} bandgående`;
+function mobText(mobs){
+const h=mobs.filter(m=>m==='H').length,b=mobs.filter(m=>m==='B').length;
+if(!h&&!b)return '';if(!b)return 'alla hjulgående';if(!h)return 'alla bandgående';
+return `${EN[h]} hjulgående och ${EN[b]} bandgående`;
 }
 function fyllTexter(K){
-  const me=ME,sp=me.path,[r,b,kg,u,row]=sp,R=regOf(r),D=OWNBAT,isBat=!K,S=CFG.steg,T=CFG.tropp;
-  const uf=FK.get(sp.slice(0,4).join('|')),rowN=P.filter(p=>p.step<=3).length,nUnitLed=sizeOf([...sp.slice(0,4),BT.plutonsledning]);
-  const bet=betText(me),regBats=BDEF.filter(d=>d.mr===r).length,totB=BDEF.length,totK=BDEF.reduce((a,d)=>a+d.komp.length,0);
-  const regK=BDEF.filter(d=>d.mr===r).reduce((a,d)=>a+d.komp.length,0);
-  const radNamn=me.kl?'Kompaniledningen':me.tr&&me.led?'Troppchefen':me.led?'Plutonsledningen':me.gnamn?me.gnamn:'Gruppen';
-  const best=t=>CFG.plutonsnamnBest[t]||t.toLowerCase();
-  const T0=[],sätt=(i,rub,txt)=>{S[i].rubrik=rub;S[i].text=txt};
-  const an=anrop(me),aL=anropLed(sp),aE=anropEnhet(sp),aK=K?anropKomp(b,kg):null,aB=anropBat(b);
-  sätt(0,'Soldaten',an?`Det här är din soldat – ${an}, ${befattning(me).toLowerCase()} i ${FORBAND}. En markering. Här börjar allt.`:`Det här är din soldat – ${bet}, ${befattning(me).toLowerCase()}. En markering. Här börjar allt.`);
-  if(rowN<2){
-    sätt(1,radNamn,'Troppchefen leder troppen och står ensam i troppledningen.');
-    sätt(2,radNamn,'Snart kommer resten av troppen.');
-  }else{
-    sätt(1,'Stridsparet','Ingen är ensam – varje soldat har en stridsparskamrat.');
-    if(me.led||me.kl)sätt(2,'Två stridspar','Två stridspar arbetar tillsammans – även i ledningen.');
-    else sätt(2,'Omgången','Minst två stridspar bildar en omgång.');
-  }
-  // steg 3: ledet
-  if(me.kl)sätt(3,radNamn,`Kompanichef (KC), stf kompanichef (stf KC), kompaniförvaltare (KF) och ${EN[rowN-3]||rowN-3} till – ${rowN} i kompaniledningen.`);
-  else if(me.tr&&me.led)sätt(3,radNamn,'Troppchefen leder troppen.');
-  else if(me.led&&isBat&&uf.typ)sätt(3,uf.tag==='Bataljonsstab'?'Bataljonsledningen':'Chefsgruppen',uf.tag==='Bataljonsstab'
-      ?`Bataljonschefen (${sigP(batPar(b))||'BC'} 1), stf bataljonschef och bataljonsförvaltaren.`
-      :`Chef (lila), stf (rosa)${rowN>2?` och ${EN[rowN-2]||rowN-2} till`:''} – ${EN[rowN]||rowN} i chefsgruppen.`);
-  else if(me.led)sätt(3,radNamn,`Plutonchefen (lila), stf plutonchef (rosa) och ${EN[rowN-2]||rowN-2} till – ${EN[rowN]||rowN} i plutonsledningen.`);
-  else if(isBat&&uf.typ)sätt(3,me.gnamn||'Gruppen',`${me.gnamn} i ${best(uf.tag)}${aL?` – ${aL}`:''}. Längst till vänster gruppchefen (lila), bredvid stf (rosa).`);
-  else if(me.tr)sätt(3,radNamn,`${me.gnamn} – en av troppens grupper, grupp ${aL||BOK[row]}. Längst till vänster gruppchefen (lila), bredvid stf (rosa).`);
-  else sätt(3,'Gruppen',`Flera omgångar bildar en grupp – grupp ${aL||BOK[row]}. Längst till vänster gruppchefen (lila), bredvid stf gruppchef (rosa).`);
-  // steg 4: enheten
-  let u4r='Plutonen',u4t='';
-  if(me.kl){u4r='Kompaniledningen';u4t=`Kompaniledningen leder kompaniet – ${K.tropp?'plutonerna och troppen':'plutonerna'} kommer i nästa steg.`}
-  else if(uf.tropp){u4r='Troppen';u4t=`Troppchefen och ${EN[T.grupper.length]} grupper – ${lista(T.namn.map(s=>s.toLowerCase()))} – bildar troppen.`}
-  else if(isBat&&uf.typ){const T=uf.typ,ng=T.grupper.length;u4r=stor(best(uf.tag));
-    u4t=uf.tag==='Bataljonsstab'?`Bataljonschefen, stf, bataljonsförvaltaren och fem sektioner – S1, S2, S3/5, S4 och S6 – bildar bataljonsstaben.`
-       :`${stor(EN[ng]||String(ng))} grupper och chefsgruppen bildar ${best(uf.tag)} – en av bataljonens egna delar.`}
-  else if(isBat){u4r=stor(best(uf.tag));u4t=`Fyra grupper och plutonsledningen bildar ${best(uf.tag)} – en av bataljonens egna plutoner.`}
-  else{const ord=(CFG.plutonsord[uf.kind]||['pluton'])[0];
-    u4t=`Fyra grupper à ${gsOf(uf.kind)} och plutonsledningen bildar en ${ord} – pluton ${aE||BOK[u]}.`+
-      (uf.mob==='H'||uf.mob==='B'?` Den är ${uf.mob==='H'?'hjulgående':'bandgående'} – ${EN[nUnitLed]} i plutonsledningen.`:uf.mob==='W'?' Den rör sig med båt.':'')}
-  sätt(4,u4r,u4t);
-  // steg 5: kompaniet (eller bataljonens plutoner)
-  if(isBat)sätt(5,'Bataljonens plutoner',`${stor(lista(D.bplut.map(q=>best(q.tag))))} – plutonerna som hör direkt till bataljonen.`);
-  else if(K.tropp)sätt(5,'Kompaniet',`${stor(EN[3])} skytteplutoner – ${mobText(K.mob.slice(0,3))} – en tropp med stab och samband, sjukvård, pack- och kokgrupp, och kompaniledningen med kompanichef (KC), stf kompanichef (stf KC) och kompaniförvaltare (KF)${aK?` – tillsammans ${kompNamn(K)} (${aK})`:''}.`);
-  else{const pw=CFG.plutonsord[K.typ]||['pluton','plutoner'],mt=K.typ==='I'?mobText(K.mob.slice(0,4)):'';
-    const npK=CFG.plutonerPerKompani[K.typ]||4;
-    sätt(5,'Kompaniet',`${stor(EN[npK])} ${pw[1]}${mt?` – ${mt} –`:''} och kompaniledningen med KC, stf KC och KF bildar ${medAnrop(kompNamn(K),aK)}.`)}
-  // steg 6: bataljonen
-  { const typer={};for(const k of D.komp)typer[k.typ]=(typer[k.typ]||0)+1;
-    const delar=Object.entries(typer).map(([t,n])=>{const o=CFG.kompaniord[t]||[t,t];return `${ETT[n]} ${n===1?o[0]:o[1]}`});
-    delar.push(...D.bplut.map(q=>best(q.tag)));
-    sätt(6,'Bataljonen',`${stor(lista(delar))} bildar ${medAnrop(`${D.nr}. ${D.namn}`,aB)}. Din soldat är fortfarande med – den gula markeringen.`)}
-  sätt(7,'Militärregionen',regBats===1?`Bataljonen är den enda hemvärnsbataljonen i ${R.full} (${R.namn}).`:`Bataljonen är en av ${regBats} hemvärnsbataljoner i ${R.full} (${R.namn}).`);
-  sätt(8,'Hemvärnet',`${stor(EN[CFG.regioner.length])} militärregioner och ${totB} hemvärnsbataljoner – och mitt i alltihop: din soldat.`);
-  S[ZOOM].rubrik=R.full;
-  for(const i of CARDS)S[i].overrubrik=FORBAND;
-  // inzoomningen, nivå för nivå
-  const ho=CFG.hemorter[D.nr],ort=ho?`i ${ho[0]}trakten`:`i ${D.namn}${/s$/.test(D.namn)?'':'s'} område`;
-  INZ=[
-    {rubrik:R.full,text:regBats===1?'Regionens enda hemvärnsbataljon.':`${regBats} hemvärnsbataljoner.`},
-    {rubrik:`${D.nr}. ${D.namn}`,text:'Kompanierna och bataljonens egna plutoner.'},
-    isBat?{rubrik:'Bataljonens plutoner',text:'Ledningsplutonen och bataljonens egna plutoner.'}
-         :{rubrik:kompNamn(K),text:K.tropp?'Tre skytteplutoner, en tropp och kompaniledningen.':`${stor(EN[CFG.plutonerPerKompani[K.typ]||4])} plutoner och kompaniledningen.`},
-    {rubrik:u4r,text:me.kl?'KC, stf KC, KF med flera.':uf.tropp?'Fyra grupper och troppchefen.':uf.typ?`${stor(EN[uf.typ.grupper.length]||String(uf.typ.grupper.length))} grupper och cheferna.`:'Fyra grupper och plutonsledningen.'},
-    {rubrik:radNamn,text:me.led||me.kl?'Ledningen, med chef och stf längst till vänster.':'Flera omgångar – chef och stf längst till vänster.'},
-    rowN<2?{rubrik:radNamn,text:'Troppchefen.'}:{rubrik:'Stridsparet',text:'Din soldat och stridsparskamraten.'},
-    {rubrik:'Här är din soldat',text:`${an||bet} – en markering på kartan ${ort}. Här börjar allt.`}
-  ];
-  // uträkningarna under antalet
-  const c=n=>count(n);
-  CALC.length=0;
-  CALC[0]='';CALC[1]=c(1)===2?'= 1 + 1':'';CALC[2]=c(2)===4?'= 2 stridspar × 2':'';
-  CALC[3]=c(3)===8&&!me.led&&!me.kl?'= 2 omgångar × 4':'';
-  if(me.kl)CALC[4]='';
-  else if(uf.tropp)CALC[4]=`= ${T.grupper.join(' + ')} + ${T.ledning} (troppchef)`;
-  else if(uf.typ){const L=uf.typ.ledning,nl=Array.isArray(L)?L.length:L;CALC[4]=`= ${uf.typ.grupper.join(' + ')} + ${nl} (${uf.tag==='Bataljonsstab'?'chefer':'chefsgrupp'})`}
-  else CALC[4]=`= 4 grupper × ${gsOf(uf.kind)} + ${nUnitLed} i plutonsledningen`;
-  { const del=new Map();                          // t.ex. "= 2 × 38 (hjul) + 37 (band) + 36 (tropp) + 8 (kompaniledning)"
-    const pref=sp.slice(0,3),units=[...FK.values()].filter(f=>isPre(pref,f.path));
-    for(const f of units){const n=sizeOf(f.path),lab=f.tropp?'tropp':f.mob==='H'?'hjul':f.mob==='B'?'band':f.mob==='W'?'båt':'',k=n+'|'+lab;del.set(k,(del.get(k)||0)+1)}
-    if(!isBat){const n=sizeOf([...pref,BT.kompaniledning]);del.set(n+'|kompaniledning',1)}
-    CALC[5]='= '+[...del].map(([k,m])=>{const [n,lab]=k.split('|');return (m>1?m+' × ':'')+n+(lab?` (${lab})`:'')}).join(' + ');
-  }
-  CALC[6]=`≈ ${D.komp.length} kompanier + ${D.bplut.length} bataljonsplutoner`.replace(/\+ 1 bataljonsplutoner/,'+ 1 bataljonspluton');
-  CALC[7]=`≈ ${regBats} bataljon${regBats===1?'':'er'} · ${regK} kompanier`;
-  CALC[8]=CALC[9]=`≈ ${totB} bataljoner · ${totK} kompanier`;
-  INZ_N=[c(7),c(6),c(5),c(4),c(3),c(1),1];
-  // rollkorten: bara de roller som finns runt den valda soldaten
-  const harKomp=!isBat,harTropp=K&&K.tropp;
-  ROLLER=CFG.steg.find(s=>s.roller).rollkort.filter(x=>x.id==='kl'?harKomp:x.id==='tr'?harTropp:true);
-  const plN=uf&&!uf.tropp?sizeOf(uf.path):sizeOf([...sp.slice(0,3),isBat?'M':BT.plutoner[0]]);
-  ROLLNUM={grupp:me.rn||8,pluton:plN,kompani:isBat?c(5):c(5),tropp:sizeOf([...sp.slice(0,3),BT.tropp])};
+const me=ME,sp=me.path,[r,b,kg,u,row]=sp,R=regOf(r),D=OWNBAT,isBat=!K,S=CFG.steg,T=CFG.tropp;
+const uf=FK.get(sp.slice(0,4).join('|')),rowN=P.filter(p=>p.step<=3).length,nUnitLed=sizeOf([...sp.slice(0,4),BT.plutonsledning]);
+const bet=betText(me),regBats=BDEF.filter(d=>d.mr===r).length,totB=BDEF.length,totK=BDEF.reduce((a,d)=>a+d.komp.length,0);
+const regK=BDEF.filter(d=>d.mr===r).reduce((a,d)=>a+d.komp.length,0);
+const radNamn=me.kl?'Kompaniledningen':me.tr&&me.led?'Troppchefen':me.led?'Plutonsledningen':me.gnamn?me.gnamn:'Gruppen';
+const best=t=>CFG.plutonsnamnBest[t]||t.toLowerCase();
+const T0=[],sätt=(i,rub,txt)=>{S[i].rubrik=rub;S[i].text=txt};
+const an=anrop(me),aL=anropLed(sp),aE=anropEnhet(sp),aK=K?anropKomp(b,kg):null,aB=anropBat(b);
+sätt(0,'Soldaten',an?`Det här är din soldat – ${an}, ${befattning(me).toLowerCase()} i ${FORBAND}. En markering. Här börjar allt.`:`Det här är din soldat – ${bet}, ${befattning(me).toLowerCase()}. En markering. Här börjar allt.`);
+if(rowN<2){
+sätt(1,radNamn,'Troppchefen leder troppen och står ensam i troppledningen.');
+sätt(2,radNamn,'Snart kommer resten av troppen.');
+}else{
+sätt(1,'Stridsparet','Ingen är ensam – varje soldat har en stridsparskamrat.');
+if(me.led||me.kl)sätt(2,'Två stridspar','Två stridspar arbetar tillsammans – även i ledningen.');
+else sätt(2,'Omgången','Minst två stridspar bildar en omgång.');
+}
+if(me.kl)sätt(3,radNamn,`Kompanichef (KC), stf kompanichef (stf KC), kompaniförvaltare (KF) och ${EN[rowN-3]||rowN-3} till – ${rowN} i kompaniledningen.`);
+else if(me.tr&&me.led)sätt(3,radNamn,'Troppchefen leder troppen.');
+else if(me.led&&isBat&&uf.typ)sätt(3,uf.tag==='Bataljonsstab'?'Bataljonsledningen':'Chefsgruppen',uf.tag==='Bataljonsstab'
+?`Bataljonschefen (${sigP(batPar(b))||'BC'} 1), stf bataljonschef och bataljonsförvaltaren.`
+:`Chef (lila), stf (rosa)${rowN>2?` och ${EN[rowN-2]||rowN-2} till`:''} – ${EN[rowN]||rowN} i chefsgruppen.`);
+else if(me.led)sätt(3,radNamn,`Plutonchefen (lila), stf plutonchef (rosa) och ${EN[rowN-2]||rowN-2} till – ${EN[rowN]||rowN} i plutonsledningen.`);
+else if(isBat&&uf.typ)sätt(3,me.gnamn||'Gruppen',`${me.gnamn} i ${best(uf.tag)}${aL?` – ${aL}`:''}. Längst till vänster gruppchefen (lila), bredvid stf (rosa).`);
+else if(me.tr)sätt(3,radNamn,`${me.gnamn} – en av troppens grupper, grupp ${aL||BOK[row]}. Längst till vänster gruppchefen (lila), bredvid stf (rosa).`);
+else sätt(3,'Gruppen',`Flera omgångar bildar en grupp – grupp ${aL||BOK[row]}. Längst till vänster gruppchefen (lila), bredvid stf gruppchef (rosa).`);
+let u4r='Plutonen',u4t='';
+if(me.kl){u4r='Kompaniledningen';u4t=`Kompaniledningen leder kompaniet – ${K.tropp?'plutonerna och troppen':'plutonerna'} kommer i nästa steg.`}
+else if(uf.tropp){u4r='Troppen';u4t=`Troppchefen och ${EN[T.grupper.length]} grupper – ${lista(T.namn.map(s=>s.toLowerCase()))} – bildar troppen.`}
+else if(isBat&&uf.typ){const T=uf.typ,ng=T.grupper.length;u4r=stor(best(uf.tag));
+u4t=uf.tag==='Bataljonsstab'?`Bataljonschefen, stf, bataljonsförvaltaren och fem sektioner – S1, S2, S3/5, S4 och S6 – bildar bataljonsstaben.`
+:`${stor(EN[ng]||String(ng))} grupper och chefsgruppen bildar ${best(uf.tag)} – en av bataljonens egna delar.`}
+else if(isBat){u4r=stor(best(uf.tag));u4t=`Fyra grupper och plutonsledningen bildar ${best(uf.tag)} – en av bataljonens egna plutoner.`}
+else{const ord=(CFG.plutonsord[uf.kind]||['pluton'])[0];
+u4t=`Fyra grupper à ${gsOf(uf.kind)} och plutonsledningen bildar en ${ord} – pluton ${aE||BOK[u]}.`+
+(uf.mob==='H'||uf.mob==='B'?` Den är ${uf.mob==='H'?'hjulgående':'bandgående'} – ${EN[nUnitLed]} i plutonsledningen.`:uf.mob==='W'?' Den rör sig med båt.':'')}
+sätt(4,u4r,u4t);
+if(isBat)sätt(5,'Bataljonens plutoner',`${stor(lista(D.bplut.map(q=>best(q.tag))))} – plutonerna som hör direkt till bataljonen.`);
+else if(K.tropp)sätt(5,'Kompaniet',`${stor(EN[3])} skytteplutoner – ${mobText(K.mob.slice(0,3))} – en tropp med stab och samband, sjukvård, pack- och kokgrupp, och kompaniledningen med kompanichef (KC), stf kompanichef (stf KC) och kompaniförvaltare (KF)${aK?` – tillsammans ${kompNamn(K)} (${aK})`:''}.`);
+else{const pw=CFG.plutonsord[K.typ]||['pluton','plutoner'],mt=K.typ==='I'?mobText(K.mob.slice(0,4)):'';
+const npK=CFG.plutonerPerKompani[K.typ]||4;
+sätt(5,'Kompaniet',`${stor(EN[npK])} ${pw[1]}${mt?` – ${mt} –`:''} och kompaniledningen med KC, stf KC och KF bildar ${medAnrop(kompNamn(K),aK)}.`)}
+{ const typer={};for(const k of D.komp)typer[k.typ]=(typer[k.typ]||0)+1;
+const delar=Object.entries(typer).map(([t,n])=>{const o=CFG.kompaniord[t]||[t,t];return `${ETT[n]} ${n===1?o[0]:o[1]}`});
+delar.push(...D.bplut.map(q=>best(q.tag)));
+sätt(6,'Bataljonen',`${stor(lista(delar))} bildar ${medAnrop(`${D.nr}. ${D.namn}`,aB)}. Din soldat är fortfarande med – den gula markeringen.`)}
+sätt(7,'Militärregionen',regBats===1?`Bataljonen är den enda hemvärnsbataljonen i ${R.full} (${R.namn}).`:`Bataljonen är en av ${regBats} hemvärnsbataljoner i ${R.full} (${R.namn}).`);
+sätt(8,'Hemvärnet',`${stor(EN[CFG.regioner.length])} militärregioner och ${totB} hemvärnsbataljoner – och mitt i alltihop: din soldat.`);
+S[ZOOM].rubrik=R.full;
+for(const i of CARDS)S[i].overrubrik=FORBAND;
+const ho=CFG.hemorter[D.nr],ort=ho?`i ${ho[0]}trakten`:`i ${D.namn}${/s$/.test(D.namn)?'':'s'} område`;
+INZ=[
+{rubrik:R.full,text:regBats===1?'Regionens enda hemvärnsbataljon.':`${regBats} hemvärnsbataljoner.`},
+{rubrik:`${D.nr}. ${D.namn}`,text:'Kompanierna och bataljonens egna plutoner.'},
+isBat?{rubrik:'Bataljonens plutoner',text:'Ledningsplutonen och bataljonens egna plutoner.'}
+:{rubrik:kompNamn(K),text:K.tropp?'Tre skytteplutoner, en tropp och kompaniledningen.':`${stor(EN[CFG.plutonerPerKompani[K.typ]||4])} plutoner och kompaniledningen.`},
+{rubrik:u4r,text:me.kl?'KC, stf KC, KF med flera.':uf.tropp?'Fyra grupper och troppchefen.':uf.typ?`${stor(EN[uf.typ.grupper.length]||String(uf.typ.grupper.length))} grupper och cheferna.`:'Fyra grupper och plutonsledningen.'},
+{rubrik:radNamn,text:me.led||me.kl?'Ledningen, med chef och stf längst till vänster.':'Flera omgångar – chef och stf längst till vänster.'},
+rowN<2?{rubrik:radNamn,text:'Troppchefen.'}:{rubrik:'Stridsparet',text:'Din soldat och stridsparskamraten.'},
+{rubrik:'Här är din soldat',text:`${an||bet} – en markering på kartan ${ort}. Här börjar allt.`}
+];
+const c=n=>count(n);
+CALC.length=0;
+CALC[0]='';CALC[1]=c(1)===2?'= 1 + 1':'';CALC[2]=c(2)===4?'= 2 stridspar × 2':'';
+CALC[3]=c(3)===8&&!me.led&&!me.kl?'= 2 omgångar × 4':'';
+if(me.kl)CALC[4]='';
+else if(uf.tropp)CALC[4]=`= ${T.grupper.join(' + ')} + ${T.ledning} (troppchef)`;
+else if(uf.typ){const L=uf.typ.ledning,nl=Array.isArray(L)?L.length:L;CALC[4]=`= ${uf.typ.grupper.join(' + ')} + ${nl} (${uf.tag==='Bataljonsstab'?'chefer':'chefsgrupp'})`}
+else CALC[4]=`= 4 grupper × ${gsOf(uf.kind)} + ${nUnitLed} i plutonsledningen`;
+{ const del=new Map();
+const pref=sp.slice(0,3),units=[...FK.values()].filter(f=>isPre(pref,f.path));
+for(const f of units){const n=sizeOf(f.path),lab=f.tropp?'tropp':f.mob==='H'?'hjul':f.mob==='B'?'band':f.mob==='W'?'båt':'',k=n+'|'+lab;del.set(k,(del.get(k)||0)+1)}
+if(!isBat){const n=sizeOf([...pref,BT.kompaniledning]);del.set(n+'|kompaniledning',1)}
+CALC[5]='= '+[...del].map(([k,m])=>{const [n,lab]=k.split('|');return (m>1?m+' × ':'')+n+(lab?` (${lab})`:'')}).join(' + ');
+}
+CALC[6]=`≈ ${D.komp.length} kompanier + ${D.bplut.length} bataljonsplutoner`.replace(/\+ 1 bataljonsplutoner/,'+ 1 bataljonspluton');
+CALC[7]=`≈ ${regBats} bataljon${regBats===1?'':'er'} · ${regK} kompanier`;
+CALC[8]=CALC[9]=`≈ ${totB} bataljoner · ${totK} kompanier`;
+INZ_N=[c(7),c(6),c(5),c(4),c(3),c(1),1];
+const harKomp=!isBat,harTropp=K&&K.tropp;
+ROLLER=CFG.steg.find(s=>s.roller).rollkort.filter(x=>x.id==='kl'?harKomp:x.id==='tr'?harTropp:true);
+const plN=uf&&!uf.tropp?sizeOf(uf.path):sizeOf([...sp.slice(0,3),isBat?'M':BT.plutoner[0]]);
+ROLLNUM={grupp:me.rn||8,pluton:plN,kompani:isBat?c(5):c(5),tropp:sizeOf([...sp.slice(0,3),BT.tropp])};
 }
 let ROLLNUM={};
-
-// ===================== Terräng =====================
 function hash(i,j,s){let h=(Math.imul(i,374761393)+Math.imul(j,668265263)+Math.imul(s,982451653))|0;h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return (h>>>0)/4294967296}
 function vn(x,y,s){
-  const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
-  const a=hash(i,j,s),b=hash(i+1,j,s),c=hash(i,j+1,s),d=hash(i+1,j+1,s);
-  return (a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v)*2-1;
+const i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
+const a=hash(i,j,s),b=hash(i+1,j,s),c=hash(i,j+1,s),d=hash(i+1,j+1,s);
+return (a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v)*2-1;
 }
 const ramp=(v,a,b)=>Math.max(0,Math.min(1,(v-a)/(b-a)));
-const coast=(x,y)=>6*vn(x/30,y/30,21)+3*vn(x/10,y/10,22)+1.2*vn(x/3.5,y/3.5,23);   // flikig kust i alla skalor
-function height(x,y,dw){                          // stora drag + detaljer som tonar fram när vi zoomar in
-  let h=.12+.25*vn(x/150+1.7,y/150-2.2,5);
-  if(dw>0)h+=dw*(.45*vn(x/34+11.3,y/34-4.1,1)+.2*vn(x/12.5,y/12.5,2)+.07*vn(x/4.6,y/4.6,3));
-  return h;
+const coast=(x,y)=>6*vn(x/30,y/30,21)+3*vn(x/10,y/10,22)+1.2*vn(x/3.5,y/3.5,23);
+function height(x,y,dw){
+let h=.12+.25*vn(x/150+1.7,y/150-2.2,5);
+if(dw>0)h+=dw*(.45*vn(x/34+11.3,y/34-4.1,1)+.2*vn(x/12.5,y/12.5,2)+.07*vn(x/4.6,y/4.6,3));
+return h;
 }
 const forest=(x,y,dw)=>.5*vn(x/180+5.5,y/180+1.3,9)+(dw>0?dw*(.5*vn(x/17,y/17,7)+.2*vn(x/5.5,y/5.5,8)):0);
 const WATER=-.42,FOREST=.12,IV=.04;
 const MAPCOL={paper:[242,239,228],forest:[214,230,193],water:[190,218,236],abroad:[214,222,227]};
 function contourAlpha(k,s){
-  if(k%8===0)return 1;
-  if(k%4===0)return ramp(s,8,16);
-  if(k%2===0)return ramp(s,30,60);
-  return ramp(s,120,240);
+if(k%8===0)return 1;
+if(k%4===0)return ramp(s,8,16);
+if(k%2===0)return ramp(s,30,60);
+return ramp(s,120,240);
 }
 const MS=[[],[3,2],[2,1],[3,1],[0,1],[0,1,3,2],[0,2],[0,3],[0,3],[0,2],[0,3,2,1],[0,1],[3,1],[2,1],[3,2],[]];
-
-// ===================== Ritning =====================
 const cv=document.getElementById('map'),ctx=cv.getContext('2d');
 const mc=document.createElement('canvas'),mctx=mc.getContext('2d');
 const ic=document.createElement('canvas'),ictx=ic.getContext('2d');
 let W=0,H=0,dpr=1,safe=null,mapKey='';
-
 function renderMap(c){
-  const g=mctx;g.setTransform(dpr,0,0,dpr,0,0);
-  const G=10,nx=Math.ceil(W/G)+3,ny=Math.ceil(H/G)+3,dw=ramp(c.s,1.5,6),gx=GEO0[0],gy=GEO0[1];
-  if(ic.width!==nx||ic.height!==ny){ic.width=nx;ic.height=ny}
-  const hs=new Float32Array(nx*ny),fs=new Float32Array(nx*ny),ls=new Float32Array(nx*ny);
-  for(let j=0;j<ny;j++){const y=c.cy+((j-1)*G-c.ay)/c.s+gy;
-    for(let i=0;i<nx;i++){
-      const x=c.cx+((i-1)*G-c.ax)/c.s+gx,k=j*nx+i,L=sdAt(LAND,x,y)+coast(x,y);ls[k]=L;
-      if(L<=0){hs[k]=-9;continue}
-      const lake=sdAt(LAKES,x,y)+1.2*vn(x/6,y/6,24);
-      hs[k]=lake>0?WATER-.3:height(x,y,dw);fs[k]=forest(x,y,dw);
-    }}
-  const img=ictx.createImageData(nx,ny),d=img.data,sl=2*G/c.s;
-  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
-    const k=j*nx+i,h=hs[k];let col,f=1;
-    if(ls[k]<=0)col=MAPCOL.abroad;
-    else{
-      const hl=hs[j*nx+Math.max(0,i-1)],hr=hs[j*nx+Math.min(nx-1,i+1)],hu=hs[Math.max(0,j-1)*nx+i],hd=hs[Math.min(ny-1,j+1)*nx+i];
-      if(hl>-9&&hr>-9&&hu>-9&&hd>-9)f=1+.07*Math.max(-1,Math.min(1,((hl-hr)+(hu-hd))/sl*5));   // svag skuggning
-      col=h<WATER?MAPCOL.water:fs[k]>FOREST?MAPCOL.forest:MAPCOL.paper;
-    }
-    d[k*4]=col[0]*f;d[k*4+1]=col[1]*f;d[k*4+2]=col[2]*f;d[k*4+3]=255;
-  }
-  ictx.putImageData(img,0,0);
-  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
-  g.drawImage(ic,-1.5*G,-1.5*G,nx*G,ny*G);
-
-  // höjdkurvor (bara på land), sjöstränder och kustlinje (marching squares)
-  const lines=new Map(),shore=[],coastL=[];
-  const ex=(e,i,j,a,b,c2,d2,L)=>{const x0=(i-1)*G,y0=(j-1)*G;
-    if(e===0)return [x0+(L-a)/(b-a)*G,y0];
-    if(e===1)return [x0+G,y0+(L-b)/(c2-b)*G];
-    if(e===2)return [x0+(L-d2)/(c2-d2)*G,y0+G];
-    return [x0,y0+(L-a)/(d2-a)*G];};
-  const seg=(arr,i,j,a,b,c2,d2,L)=>{
-    const idx=(a>L?8:0)|(b>L?4:0)|(c2>L?2:0)|(d2>L?1:0),t=MS[idx];
-    for(let q=0;q<t.length;q+=2){const p1=ex(t[q],i,j,a,b,c2,d2,L),p2=ex(t[q+1],i,j,a,b,c2,d2,L);arr.push(p1[0],p1[1],p2[0],p2[1])}};
-  for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){
-    const k=j*nx+i,la=ls[k],lb=ls[k+1],lc=ls[k+nx+1],ld=ls[k+nx];
-    if(Math.min(la,lb,lc,ld)<0&&Math.max(la,lb,lc,ld)>0)seg(coastL,i,j,la,lb,lc,ld,0);
-    if(la<=0||lb<=0||lc<=0||ld<=0)continue;
-    const a=hs[k],b=hs[k+1],c2=hs[k+nx+1],d2=hs[k+nx];
-    const mn=Math.min(a,b,c2,d2),mx=Math.max(a,b,c2,d2);
-    for(let q=Math.ceil(mn/IV);q*IV<=mx;q++){
-      if(q*IV<WATER||contourAlpha(q,c.s)<.03)continue;
-      let arr=lines.get(q);if(!arr){arr=[];lines.set(q,arr)}
-      seg(arr,i,j,a,b,c2,d2,q*IV);
-    }
-    if(mn<WATER&&mx>WATER)seg(shore,i,j,a,b,c2,d2,WATER);
-  }
-  const stroke=(arr,st,w)=>{g.strokeStyle=st;g.lineWidth=w;g.beginPath();for(let q=0;q<arr.length;q+=4){g.moveTo(arr[q],arr[q+1]);g.lineTo(arr[q+2],arr[q+3])}g.stroke()};
-  g.lineCap='round';
-  for(const [q,arr] of lines){const al=contourAlpha(q,c.s),idx=q%8===0;stroke(arr,`rgba(160,108,56,${(idx?.5:.32)*al})`,idx?1.3:.9)}
-  stroke(shore,'rgba(70,130,185,.6)',1.2);
-  stroke(coastL,'rgba(80,104,120,.75)',1.3);
-  if(c.s<3){g.fillStyle=`rgb(${MAPCOL.water})`;g.strokeStyle='rgba(70,130,185,.6)';g.lineWidth=1;   // stora sjöar som ytor långt ute (annars för smala)
-    for(const poly of SJOXY){g.beginPath();poly.forEach(([x,y],i)=>{const X=c.ax+(x-gx-c.cx)*c.s,Y=c.ay+(y-gy-c.cy)*c.s;i?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill();g.stroke()}}
-
-  // kartrutor: tätare när vi är nära, glesare när vi zoomar ut
-  const u=[.5,1,2,5,10,20,50,100,200,500,1000,2000].find(v=>v*c.s>=150)||2000;
-  g.strokeStyle='rgba(60,110,160,.13)';g.lineWidth=1;g.beginPath();
-  const wx0=c.cx-c.ax/c.s,wx1=c.cx+(W-c.ax)/c.s,wy0=c.cy-c.ay/c.s,wy1=c.cy+(H-c.ay)/c.s;
-  for(let x=Math.ceil(wx0/u)*u;x<=wx1;x+=u){const X=Math.round(c.ax+(x-c.cx)*c.s)+.5;g.moveTo(X,0);g.lineTo(X,H)}
-  for(let y=Math.ceil(wy0/u)*u;y<=wy1;y+=u){const Y=Math.round(c.ay+(y-c.cy)*c.s)+.5;g.moveTo(0,Y);g.lineTo(W,Y)}
-  g.stroke();
+const g=mctx;g.setTransform(dpr,0,0,dpr,0,0);
+const G=10,nx=Math.ceil(W/G)+3,ny=Math.ceil(H/G)+3,dw=ramp(c.s,1.5,6),gx=GEO0[0],gy=GEO0[1];
+if(ic.width!==nx||ic.height!==ny){ic.width=nx;ic.height=ny}
+const hs=new Float32Array(nx*ny),fs=new Float32Array(nx*ny),ls=new Float32Array(nx*ny);
+for(let j=0;j<ny;j++){const y=c.cy+((j-1)*G-c.ay)/c.s+gy;
+for(let i=0;i<nx;i++){
+const x=c.cx+((i-1)*G-c.ax)/c.s+gx,k=j*nx+i,L=sdAt(LAND,x,y)+coast(x,y);ls[k]=L;
+if(L<=0){hs[k]=-9;continue}
+const lake=sdAt(LAKES,x,y)+1.2*vn(x/6,y/6,24);
+hs[k]=lake>0?WATER-.3:height(x,y,dw);fs[k]=forest(x,y,dw);
+}}
+const img=ictx.createImageData(nx,ny),d=img.data,sl=2*G/c.s;
+for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+const k=j*nx+i,h=hs[k];let col,f=1;
+if(ls[k]<=0)col=MAPCOL.abroad;
+else{
+const hl=hs[j*nx+Math.max(0,i-1)],hr=hs[j*nx+Math.min(nx-1,i+1)],hu=hs[Math.max(0,j-1)*nx+i],hd=hs[Math.min(ny-1,j+1)*nx+i];
+if(hl>-9&&hr>-9&&hu>-9&&hd>-9)f=1+.07*Math.max(-1,Math.min(1,((hl-hr)+(hu-hd))/sl*5));
+col=h<WATER?MAPCOL.water:fs[k]>FOREST?MAPCOL.forest:MAPCOL.paper;
 }
-
+d[k*4]=col[0]*f;d[k*4+1]=col[1]*f;d[k*4+2]=col[2]*f;d[k*4+3]=255;
+}
+ictx.putImageData(img,0,0);
+g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+g.drawImage(ic,-1.5*G,-1.5*G,nx*G,ny*G);
+const lines=new Map(),shore=[],coastL=[];
+const ex=(e,i,j,a,b,c2,d2,L)=>{const x0=(i-1)*G,y0=(j-1)*G;
+if(e===0)return [x0+(L-a)/(b-a)*G,y0];
+if(e===1)return [x0+G,y0+(L-b)/(c2-b)*G];
+if(e===2)return [x0+(L-d2)/(c2-d2)*G,y0+G];
+return [x0,y0+(L-a)/(d2-a)*G];};
+const seg=(arr,i,j,a,b,c2,d2,L)=>{
+const idx=(a>L?8:0)|(b>L?4:0)|(c2>L?2:0)|(d2>L?1:0),t=MS[idx];
+for(let q=0;q<t.length;q+=2){const p1=ex(t[q],i,j,a,b,c2,d2,L),p2=ex(t[q+1],i,j,a,b,c2,d2,L);arr.push(p1[0],p1[1],p2[0],p2[1])}};
+for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){
+const k=j*nx+i,la=ls[k],lb=ls[k+1],lc=ls[k+nx+1],ld=ls[k+nx];
+if(Math.min(la,lb,lc,ld)<0&&Math.max(la,lb,lc,ld)>0)seg(coastL,i,j,la,lb,lc,ld,0);
+if(la<=0||lb<=0||lc<=0||ld<=0)continue;
+const a=hs[k],b=hs[k+1],c2=hs[k+nx+1],d2=hs[k+nx];
+const mn=Math.min(a,b,c2,d2),mx=Math.max(a,b,c2,d2);
+for(let q=Math.ceil(mn/IV);q*IV<=mx;q++){
+if(q*IV<WATER||contourAlpha(q,c.s)<.03)continue;
+let arr=lines.get(q);if(!arr){arr=[];lines.set(q,arr)}
+seg(arr,i,j,a,b,c2,d2,q*IV);
+}
+if(mn<WATER&&mx>WATER)seg(shore,i,j,a,b,c2,d2,WATER);
+}
+const stroke=(arr,st,w)=>{g.strokeStyle=st;g.lineWidth=w;g.beginPath();for(let q=0;q<arr.length;q+=4){g.moveTo(arr[q],arr[q+1]);g.lineTo(arr[q+2],arr[q+3])}g.stroke()};
+g.lineCap='round';
+for(const [q,arr] of lines){const al=contourAlpha(q,c.s),idx=q%8===0;stroke(arr,`rgba(160,108,56,${(idx?.5:.32)*al})`,idx?1.3:.9)}
+stroke(shore,'rgba(70,130,185,.6)',1.2);
+stroke(coastL,'rgba(80,104,120,.75)',1.3);
+if(c.s<3){g.fillStyle=`rgb(${MAPCOL.water})`;g.strokeStyle='rgba(70,130,185,.6)';g.lineWidth=1;
+for(const poly of SJOXY){g.beginPath();poly.forEach(([x,y],i)=>{const X=c.ax+(x-gx-c.cx)*c.s,Y=c.ay+(y-gy-c.cy)*c.s;i?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill();g.stroke()}}
+const u=[.5,1,2,5,10,20,50,100,200,500,1000,2000].find(v=>v*c.s>=150)||2000;
+g.strokeStyle='rgba(60,110,160,.13)';g.lineWidth=1;g.beginPath();
+const wx0=c.cx-c.ax/c.s,wx1=c.cx+(W-c.ax)/c.s,wy0=c.cy-c.ay/c.s,wy1=c.cy+(H-c.ay)/c.s;
+for(let x=Math.ceil(wx0/u)*u;x<=wx1;x+=u){const X=Math.round(c.ax+(x-c.cx)*c.s)+.5;g.moveTo(X,0);g.lineTo(X,H)}
+for(let y=Math.ceil(wy0/u)*u;y<=wy1;y+=u){const Y=Math.round(c.ay+(y-c.cy)*c.s)+.5;g.moveTo(0,Y);g.lineTo(W,Y)}
+g.stroke();
+}
 function rr(c,x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 const colOf=o=>COLS[o.own?'own':(o.role||'std')];
 function label(c,txt,X,Y,font,fill,align){c.font=font;c.textAlign=align||'left';c.lineJoin='round';c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=3.5;c.strokeText(txt,X,Y);c.fillStyle=fill;c.fillText(txt,X,Y)}
-function mob(c,X,Y,typ){                          // rörlighetstecken: hjul ○○, band ⬭
-  c.lineWidth=1.4;c.beginPath();
-  if(typ==='B')rr(c,X-8,Y-3,16,6,3);
-  else if(typ==='W'){c.moveTo(X-9,Y-3);c.quadraticCurveTo(X-7,Y+3,X-3,Y+3);c.lineTo(X+3,Y+3);c.quadraticCurveTo(X+7,Y+3,X+9,Y-3)}   // båt: skrov
-  else{c.moveTo(X-1.6,Y);c.arc(X-5,Y,3.4,0,Math.PI*2);c.moveTo(X+8.4,Y);c.arc(X+5,Y,3.4,0,Math.PI*2)}   // hjul
-  c.stroke();
+function mob(c,X,Y,typ){
+c.lineWidth=1.4;c.beginPath();
+if(typ==='B')rr(c,X-8,Y-3,16,6,3);
+else if(typ==='W'){c.moveTo(X-9,Y-3);c.quadraticCurveTo(X-7,Y+3,X-3,Y+3);c.lineTo(X+3,Y+3);c.quadraticCurveTo(X+7,Y+3,X+9,Y-3)}
+else{c.moveTo(X-1.6,Y);c.arc(X-5,Y,3.4,0,Math.PI*2);c.moveTo(X+8.4,Y);c.arc(X+5,Y,3.4,0,Math.PI*2)}
+c.stroke();
 }
-
-// soldatmarkering: cirkel med riktningspinne rakt söderut; färg efter roll, ledning = ring runt
 function sym(c,X,Y,R,o,a){
-  c.globalAlpha=a;
-  const [fill,dark]=colOf(o);
-  c.lineCap='round';
-  if(o.led&&(o.role==='chef'||o.role==='stf')){c.strokeStyle=fill;c.lineWidth=Math.max(1,R*.17);c.beginPath();c.arc(X,Y,R*1.48,0,Math.PI*2);c.stroke()}
-  c.strokeStyle=dark;c.lineWidth=Math.max(1,R*.24);
-  c.beginPath();c.moveTo(X,Y+R*.8);c.lineTo(X,Y+R*2.25);c.stroke();
-  c.fillStyle=fill;c.strokeStyle='rgba(255,255,255,.95)';c.lineWidth=Math.max(1,R*.16);
-  c.beginPath();c.arc(X,Y,R,0,Math.PI*2);c.fill();c.stroke();
-  c.globalAlpha=1;
+c.globalAlpha=a;
+const [fill,dark]=colOf(o);
+c.lineCap='round';
+if(o.led&&(o.role==='chef'||o.role==='stf')){c.strokeStyle=fill;c.lineWidth=Math.max(1,R*.17);c.beginPath();c.arc(X,Y,R*1.48,0,Math.PI*2);c.stroke()}
+c.strokeStyle=dark;c.lineWidth=Math.max(1,R*.24);
+c.beginPath();c.moveTo(X,Y+R*.8);c.lineTo(X,Y+R*2.25);c.stroke();
+c.fillStyle=fill;c.strokeStyle='rgba(255,255,255,.95)';c.lineWidth=Math.max(1,R*.16);
+c.beginPath();c.arc(X,Y,R,0,Math.PI*2);c.fill();c.stroke();
+c.globalAlpha=1;
 }
-// ===================== Kamera och animation =====================
 const easeIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
 const easeOut=t=>1-Math.pow(1-t,3);
 const easeBack=t=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)};
 let mapT0=0,cur=0,camPath=[],camTo=null,numShown=-1,wFrom=1,wTo=1,wT0=0,wD=1,zoomStages=[],zoomStage=-1,SETUP=false;
-
 function fitBox(x0,y0,x1,y1,minW){
-  const bw=Math.max(minW||0,(x1-x0)*1.08+1.4),bh=(y1-y0)*1.08+1.2;
-  return {cx:(x0+x1)/2,cy:(y0+y1)/2,s:Math.min(safe.w/bw,safe.h/bh),ax:safe.x+safe.w/2,ay:safe.y+safe.h/2};
+const bw=Math.max(minW||0,(x1-x0)*1.08+1.4),bh=(y1-y0)*1.08+1.2;
+return {cx:(x0+x1)/2,cy:(y0+y1)/2,s:Math.min(safe.w/bw,safe.h/bh),ax:safe.x+safe.w/2,ay:safe.y+safe.h/2};
 }
 function bboxOf(list,n){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  for(const e of list){const d=dispAt(e,n);if(e.x0!==undefined){x0=Math.min(x0,e.x0+d[0]);y0=Math.min(y0,e.y0+d[1]);x1=Math.max(x1,e.x1+d[0]);y1=Math.max(y1,e.y1+d[1])}
-    else{x0=Math.min(x0,e.x+d[0]);y0=Math.min(y0,e.y+d[1]);x1=Math.max(x1,e.x+d[0]);y1=Math.max(y1,e.y+d[1])}}
-  return [x0,y0,x1,y1]}
-function zoomKeys(){                              // inzoomningens nivåer, geografiskt placerade
-  const n=ZOOM,els=[...P,...F].filter(e=>e.lvl!==4),k=s=>bboxOf(els.filter(e=>e.step<=s),n);
-  return [fitBox(...k(7)),fitBox(...k(6)),fitBox(...k(5)),fitBox(...k(4)),fitBox(...k(3),10.5),fitBox(...k(1),5),fitBox(0,0,0,0,3.2)];
+for(const e of list){const d=dispAt(e,n);if(e.x0!==undefined){x0=Math.min(x0,e.x0+d[0]);y0=Math.min(y0,e.y0+d[1]);x1=Math.max(x1,e.x1+d[0]);y1=Math.max(y1,e.y1+d[1])}
+else{x0=Math.min(x0,e.x+d[0]);y0=Math.min(y0,e.y+d[1]);x1=Math.max(x1,e.x+d[0]);y1=Math.max(y1,e.y+d[1])}}
+return [x0,y0,x1,y1]}
+function zoomKeys(){
+useSafe(ZOOM);
+const n=ZOOM,els=[...P,...F].filter(e=>e.lvl!==4),k=s=>bboxOf(els.filter(e=>e.step<=s),n);
+return [fitBox(...k(7)),fitBox(...k(6)),fitBox(...k(5)),fitBox(...k(4)),fitBox(...k(3),10.5),fitBox(...k(1),5),fitBox(0,0,0,0,3.2)];
 }
 function fit(n){
-  if(n===MAP){const a=W>760?{x:34,y:40,w:W-68,h:H-40-105}:{x:safe.x,y:safe.y,w:safe.w,h:safe.h},bw=(SWE.x1-SWE.x0)*1.04,bh=(SWE.y1-SWE.y0)*1.04;   // hela höjden – mindre grått
-    return {cx:(SWE.x0+SWE.x1)/2-GEO0[0],cy:(SWE.y0+SWE.y1)/2-GEO0[1],s:Math.min(a.w/bw,a.h/bh),ax:a.x+a.w/2,ay:a.y+a.h/2}}
-  if(n===ZOOM){const k=zoomKeys();return k[k.length-1]}
-  if(isCard(n)){                                 // soldaten – eller hela kompaniet på rollbilden – till vänster om kortet
-    const kort=$('kort'),wide=W>760,free=Math.max(160,(wide?kort.offsetLeft:W)-34-20);
-    const area=wide?{x:34,y:40,w:free,h:H-140}:{x:16,y:24,w:W-32,h:Math.max(110,H*.34-30)};
-    const b=CFG.steg[n].roller?bboxOf([...P,...F].filter(e=>e.step<=5&&e.lvl!==0),n):[-3,-1,3,1];
-    const bw=(b[2]-b[0])*1.08+1.4,bh=(b[3]-b[1])*1.08+1.2;
-    return {cx:(b[0]+b[2])/2,cy:(b[1]+b[3])/2,s:Math.min(area.w/bw,area.h/bh),ax:area.x+area.w/2,ay:area.y+area.h/2};
-  }
-  return fitBox(...bboxOf(ELS.filter(e=>e!==DU&&visAt(e,n)),n),[3.2,5,7,10.5][n]||0);
+useSafe(n);
+if(n===MAP){const a=W>760?{x:34,y:40,w:W-68,h:H-40-105}:{x:safe.x,y:safe.y,w:safe.w,h:safe.h},bw=(SWE.x1-SWE.x0)*1.04,bh=(SWE.y1-SWE.y0)*1.04;
+return {cx:(SWE.x0+SWE.x1)/2-GEO0[0],cy:(SWE.y0+SWE.y1)/2-GEO0[1],s:Math.min(a.w/bw,a.h/bh),ax:a.x+a.w/2,ay:a.y+a.h/2}}
+if(n===ZOOM){const k=zoomKeys();return k[k.length-1]}
+if(isCard(n)){
+const kort=$('kort'),wide=W>760,free=Math.max(160,(wide?kort.offsetLeft:W)-34-20);
+const area=wide?{x:34,y:40,w:free,h:H-140}:{x:16,y:24,w:W-32,h:Math.max(110,H*.34-30)};
+const b=CFG.steg[n].roller?bboxOf([...P,...F].filter(e=>e.step<=5&&e.lvl!==0),n):[-3,-1,3,1];
+const bw=(b[2]-b[0])*1.08+1.4,bh=(b[3]-b[1])*1.08+1.2;
+return {cx:(b[0]+b[2])/2,cy:(b[1]+b[3])/2,s:Math.min(area.w/bw,area.h/bh),ax:area.x+area.w/2,ay:area.y+area.h/2};
+}
+return fitBox(...bboxOf(ELS.filter(e=>e!==DU&&visAt(e,n)),n),[3.2,5,7,10.5][n]||0);
 }
 function camAt(now){
-  for(const sg of camPath){
-    if(now<sg.t0)return sg.from;
-    if(now<sg.t0+sg.d){const k=easeIO((now-sg.t0)/sg.d),L=(a,b)=>a+(b-a)*k;
-      return {cx:L(sg.from.cx,sg.to.cx),cy:L(sg.from.cy,sg.to.cy),s:Math.exp(L(Math.log(sg.from.s),Math.log(sg.to.s))),ax:L(sg.from.ax,sg.to.ax),ay:L(sg.from.ay,sg.to.ay)}}
-  }
-  return camTo;
+for(const sg of camPath){
+if(now<sg.t0)return sg.from;
+if(now<sg.t0+sg.d){const k=easeIO((now-sg.t0)/sg.d),L=(a,b)=>a+(b-a)*k;
+return {cx:L(sg.from.cx,sg.to.cx),cy:L(sg.from.cy,sg.to.cy),s:Math.exp(L(Math.log(sg.from.s),Math.log(sg.to.s))),ax:L(sg.from.ax,sg.to.ax),ay:L(sg.from.ay,sg.to.ay)}}
+}
+return camTo;
 }
 const whiteAt=now=>wFrom+(wTo-wFrom)*easeIO(Math.min(1,Math.max(0,(now-wT0)/wD)));
 function tw(e,now){const p=Math.min(1,Math.max(0,(now-e.start)/e.dur));return {a:e.from+(e.vis-e.from)*easeOut(p),p}}
 function curDisp(e,now){const k=easeIO(Math.min(1,Math.max(0,(now-e.ds)/e.dd)));return [e.d0[0]+(e.d1[0]-e.d0[0])*k,e.d0[1]+(e.d1[1]-e.d0[1])*k]}
-
-// ===================== Text, teckenförklaring, navigering =====================
 const $=id=>document.getElementById(id);
 const cap=$('cap'),legend=$('legend'),nav=document.querySelector('.nav');
 $('lgDu').textContent=CFG.du;
 function setCaption(t,txt,N,calc){
-  $('title').textContent=t;$('text').textContent=txt||'';
-  $('what').textContent=N===1?'soldat':'soldater';$('calc').textContent=calc||'';
-  if(N!==undefined){$('num').textContent=fmt(N);numShown=N}
+$('title').textContent=t;$('text').textContent=txt||'';
+$('what').textContent=N===1?'soldat':'soldater';$('calc').textContent=calc||'';
+if(N!==undefined){$('num').textContent=fmt(N);numShown=N}
 }
 let rotTimer=null;
-function startRotation(){                        // Utöver-listan: slumpad ordning, ett byte i taget, varannan rad
-  stopRotation();const L=CFG.baraLoser,lis=[...$('kLista').children];if(!L.length)return;
-  const mix=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-  let deck=[];const pick=()=>{if(!deck.length){const vis=lis.map(li=>li.textContent);deck=mix(L.filter(x=>!vis.includes(x)));if(!deck.length)deck=mix([...L])}return deck.pop()};
-  lis.forEach(li=>li.textContent='');lis.forEach(li=>{li.textContent=pick();li.classList.remove('ut')});   // inget upprepas förrän alla visats
-  const order=[...lis.keys()].sort((a,b)=>(a%2)-(b%2)||a-b);let oi=0;   // 1, 3, 5, 2, 4 – varannan rad
-  rotTimer=setInterval(()=>{const li=lis[order[oi]];li.classList.add('ut');
-    setTimeout(()=>{li.textContent=pick();li.classList.remove('ut')},400);
-    oi=(oi+1)%order.length},CFG.byteSek*1000);
+function startRotation(){
+stopRotation();const L=CFG.baraLoser,lis=[...$('kLista').children];if(!L.length)return;
+const mix=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let deck=[];const pick=()=>{if(!deck.length){const vis=lis.map(li=>li.textContent);deck=mix(L.filter(x=>!vis.includes(x)));if(!deck.length)deck=mix([...L])}return deck.pop()};
+lis.forEach(li=>li.textContent='');lis.forEach(li=>{li.textContent=pick();li.classList.remove('ut')});
+const order=[...lis.keys()].sort((a,b)=>(a%2)-(b%2)||a-b);let oi=0;
+rotTimer=setInterval(()=>{const li=lis[order[oi]];li.classList.add('ut');
+setTimeout(()=>{li.textContent=pick();li.classList.remove('ut')},400);
+oi=(oi+1)%order.length},CFG.byteSek*1000);
 }
 function stopRotation(){clearInterval(rotTimer);rotTimer=null}
 let cardShown=-1,roleActive=-1;
 const roleMatch=(p,id)=>id==='gc'?(p.role==='chef'&&!p.led):id==='pl'?!!p.pl:id==='kl'?!!p.kl:id==='tr'?!!p.tr:false;
 function roleIcon(c,id){const g=c.getContext('2d');c.width=56;c.height=48;g.scale(2,2);
-  if(id==='tr'){g.fillStyle='#3b5e40';g.beginPath();g.arc(10,10,2.8,0,Math.PI*2);g.arc(18,10,2.8,0,Math.PI*2);g.fill();return}
-  sym(g,14,8.5,5,{role:'chef',led:id!=='gc'},1)}
+if(id==='tr'){g.fillStyle='#3b5e40';g.beginPath();g.arc(10,10,2.8,0,Math.PI*2);g.arc(18,10,2.8,0,Math.PI*2);g.fill();return}
+sym(g,14,8.5,5,{role:'chef',led:id!=='gc'},1)}
 function setRole(i){roleActive=i;[...$('kRoller').children].forEach((d,k)=>d.classList.toggle('aktiv',k===i))}
 function startRoles(i){stopRoles();if(!ROLLER.length)return;setRole(i||0)}
 function stopRoles(){roleActive=-1}
 function fillCard(n){
-  const s=CFG.steg[n],roles=!!s.roller;
-  $('kPunkter').hidden=roles;document.querySelector('.kort .utover').hidden=roles;$('kRoller').hidden=!roles;
-  if(roles){const box=$('kRoller'),N=ROLLNUM;box.innerHTML='';
-    ROLLER.forEach((r,i)=>{const d=document.createElement('div'),h=document.createElement('h4'),c=document.createElement('canvas'),p=document.createElement('p');
-      d.className='roll';roleIcon(c,r.id);h.append(c,r.rubrik);p.textContent=r.text.replace(/\{(\w+)\}/g,(m,k)=>k in N?fmt(N[k]):m);
-      d.append(h,p);d.onclick=()=>setRole(i);box.appendChild(d)});
-    $('kNastaRoll').onclick=e=>{setRole((roleActive+1)%ROLLER.length);e.currentTarget.blur()}}
-  $('kNastaRoll').hidden=!roles;
-  $('kEyebrow').textContent=s.overrubrik||'';$('kTitle').textContent=s.rubrik||'';$('kIngress').textContent=s.ingress||'';
-  const ol=$('kPunkter');ol.innerHTML='';
-  for(const [verb,rest] of s.punkter||[]){const li=document.createElement('li'),b=document.createElement('b');b.textContent=verb;li.append(b,' '+rest);ol.appendChild(li)}
-  $('kUtover').textContent=s.utover||'';$('kFot').textContent=s.fot||'';
+const s=CFG.steg[n],roles=!!s.roller;
+$('kPunkter').hidden=roles;document.querySelector('.kort .utover').hidden=roles;$('kRoller').hidden=!roles;
+if(roles){const box=$('kRoller'),N=ROLLNUM;box.innerHTML='';
+ROLLER.forEach((r,i)=>{const d=document.createElement('div'),h=document.createElement('h4'),c=document.createElement('canvas'),p=document.createElement('p');
+d.className='roll';roleIcon(c,r.id);h.append(c,r.rubrik);p.textContent=r.text.replace(/\{(\w+)\}/g,(m,k)=>k in N?fmt(N[k]):m);
+d.append(h,p);d.onclick=()=>setRole(i);box.appendChild(d)});
+$('kNastaRoll').onclick=e=>{setRole((roleActive+1)%ROLLER.length);e.currentTarget.blur()}}
+$('kNastaRoll').hidden=!roles;
+$('kEyebrow').textContent=s.overrubrik||'';$('kTitle').textContent=s.rubrik||'';$('kIngress').textContent=s.ingress||'';
+const ol=$('kPunkter');ol.innerHTML='';
+for(const [verb,rest] of s.punkter||[]){const li=document.createElement('li'),b=document.createElement('b');b.textContent=verb;li.append(b,' '+rest);ol.appendChild(li)}
+$('kUtover').textContent=s.utover||'';$('kFot').textContent=s.fot||'';
 }
 function fillCaption(n){
-  const card=isCard(n);cap.classList.toggle('gone',card);$('kort').classList.toggle('on',card);
-  if(card){if(cardShown!==n){cardShown=n;stopRotation();stopRoles();fillCard(n);if(CFG.steg[n].roller)startRoles();else startRotation()}return}
-  cardShown=-1;stopRotation();stopRoles();
-  if(n===ZOOM){const z=Math.max(0,zoomStage);setCaption(INZ[z].rubrik,INZ[z].text,INZ_N[z],'');return}
-  const s=CFG.steg[n];setCaption(s.rubrik,s.text,undefined,CALC[n]||'');
-  $('what').textContent=count(n)===1?'soldat':'soldater';
+const card=isCard(n);cap.classList.toggle('gone',card);$('kort').classList.toggle('on',card);
+if(card){if(cardShown!==n){cardShown=n;stopRotation();stopRoles();fillCard(n);if(CFG.steg[n].roller)startRoles();else startRotation()}return}
+cardShown=-1;stopRotation();stopRoles();
+if(n===ZOOM){const z=Math.max(0,zoomStage);setCaption(INZ[z].rubrik,INZ[z].text,INZ_N[z],'');return}
+const s=CFG.steg[n];setCaption(s.rubrik,s.text,undefined,CALC[n]||'');
+$('what').textContent=count(n)===1?'soldat':'soldater';
 }
 function swapCaption(fn){cap.classList.add('swap');setTimeout(()=>{fn();cap.classList.remove('swap')},200*MOTION)}
 function showLegend(n){legend.querySelectorAll('[data-from]').forEach(e=>e.hidden=+e.dataset.from>n);legend.classList.toggle('gone',isCard(n))}
-function measure(){                               // ytan där grafiken får plats mellan textrutan och knapparna
-  let mh=0;const keep=zoomStage,keepCard=cardShown;
-  for(let n=0;n<STEPS;n++){if(n===ZOOM||isCard(n))continue;fillCaption(n);$('num').textContent=fmt(count(n));mh=Math.max(mh,cap.offsetHeight)}
-  for(let z=0;z<INZ.length;z++){zoomStage=z;fillCaption(ZOOM);mh=Math.max(mh,cap.offsetHeight)}
-  zoomStage=keep;cardShown=isCard(cur)?keepCard:-1;if(cur>=0)fillCaption(cur);numShown=-1;
-  legend.querySelectorAll('[data-from]').forEach(e=>e.hidden=false);
-  const bottomH=Math.max(legend.offsetParent?legend.offsetHeight:0,nav.offsetHeight);
-  showLegend(cur);
-  const top=cap.offsetTop+mh+16,bottom=H-(bottomH+26+14);
-  const sx=W>760?34:14;safe={x:sx,y:top,w:W-2*sx,h:Math.max(140,bottom-top)};
+const CAPH=[];let CAPZ=0;
+function measure(){
+let mh=0;CAPZ=0;const keep=zoomStage,keepCard=cardShown;
+for(let n=0;n<STEPS;n++){if(n===ZOOM||isCard(n))continue;fillCaption(n);$('num').textContent=fmt(count(n));CAPH[n]=cap.offsetHeight;mh=Math.max(mh,cap.offsetHeight)}
+for(let z=0;z<INZ.length;z++){zoomStage=z;fillCaption(ZOOM);CAPZ=Math.max(CAPZ,cap.offsetHeight);mh=Math.max(mh,cap.offsetHeight)}
+zoomStage=keep;cardShown=isCard(cur)?keepCard:-1;if(cur>=0)fillCaption(cur);numShown=-1;
+legend.querySelectorAll('[data-from]').forEach(e=>e.hidden=false);
+const bottomH=Math.max(legend.offsetParent?legend.offsetHeight:0,nav.offsetHeight);
+showLegend(cur);
+const top=cap.offsetTop+mh+16,bottom=H-(bottomH+26+14);
+const sx=W>760?34:14;safe={x:sx,y:top,w:W-2*sx,h:Math.max(140,bottom-top)};SAFE0=safe;SAFEB=bottom;
+}
+let SAFE0=null,SAFEB=0;
+function useSafe(n){
+if(!SAFE0)return;if(W>760){safe=SAFE0;return}
+const h=n===ZOOM?CAPZ:CAPH[n];if(!h){safe=SAFE0;return}
+const top=cap.offsetTop+h+12;safe={x:SAFE0.x,y:top,w:SAFE0.w,h:Math.max(140,SAFEB-top)};
 }
 const dots=$('dots');
 CFG.steg.forEach((s,k)=>{const b=document.createElement('button');b.title=s.rubrik||'Kort';b.setAttribute('aria-label',s.rubrik||'Kort');b.onclick=()=>{go(k);b.blur()};dots.appendChild(b)});
-$('prev').onclick=e=>{if(cur===0&&!SETUP)openSetup();else if(!SETUP)go(cur-1);e.currentTarget.blur()};
+$('prev').onclick=e=>{if(cur>0)go(cur-1);e.currentTarget.blur()};
 $('next').onclick=e=>{SETUP?go(0):go(cur+1);e.currentTarget.blur()};
-$('valj').onclick=e=>{openSetup();e.currentTarget.blur()};
-function setHash(){try{history.replaceState(null,'','#'+(SETUP?0:cur+1)+'/'+betKod(ME))}catch(e){}}
+function setHash(){try{history.replaceState(null,'','#'+(cur+1))}catch(e){}}
 function navState(){
-  [...dots.children].forEach((b,k)=>b.classList.toggle('on',!SETUP&&k===cur));
-  $('pg').textContent=(SETUP?0:cur+1)+' / '+STEPS;
-  $('prev').disabled=SETUP;$('next').disabled=!SETUP&&cur===STEPS-1;$('next').textContent=SETUP?'Starta →':'Nästa →';
+[...dots.children].forEach((b,k)=>b.classList.toggle('on',!SETUP&&k===cur));
+$('pg').textContent=(SETUP?0:cur+1)+' / '+STEPS;
+$('prev').disabled=SETUP||cur===0;$('next').disabled=!SETUP&&cur===STEPS-1;$('next').textContent=SETUP?'Starta →':'Nästa →';
 }
-
 function go(n,instant){
-  const wasSetup=SETUP;
-  if(SETUP){SETUP=false;document.body.classList.remove('inst');hoverP=null;tip.classList.remove('on');cv.classList.remove('peka','drag')}
-  n=Math.max(0,Math.min(STEPS-1,n));
-  if(n===cur&&!instant&&!wasSetup)return;
-  const now=performance.now(),fwd=n>cur,D=instant?0:(fwd?(n===MAP?2800:1700):1100)*MOTION;
-  if(n===MAP)mapT0=now;
-  // kameran (inzoomningen är en hel resa genom nivåerna)
-  const from=camAt(now);
-  zoomStages=[];zoomStage=-1;
-  if(n===ZOOM&&fwd&&!instant){
-    const keys=zoomKeys();let t=now+300*MOTION,prev=from;camPath=[];
-    keys.forEach(k=>{const d=(550+430*Math.abs(Math.log(k.s/prev.s)))*MOTION;camPath.push({from:prev,to:k,t0:t,d});zoomStages.push(t+d*.45);t+=d+480*MOTION;prev=k});
-    camTo=keys[keys.length-1];
-  }else{camTo=fit(n);camPath=instant?[]:[{from,to:camTo,t0:now,d:Math.max(1,D)}];if(n===ZOOM)zoomStage=INZ.length-1}
-  const last=camPath[camPath.length-1],pathEnd=last?last.t0+last.d:now;
-  // det vita kortet tonas bort när hemvärnet läggs ut på kartan
-  wFrom=whiteAt(now);wTo=isMap(n)?0:1;wT0=now+(fwd?D*.05:0);wD=instant?1:Math.max(1,fwd?D*.5:D*.6);
-  const appearing=[];
-  for(const e of ELS){
-    const v=visAt(e,n),tgt=dispAt(e,n);
-    if(v!==e.vis){
-      e.from=tw(e,now).a;e.vis=v;
-      if(v&&fwd&&!instant){appearing.push(e);const en=e.enter||[0,0];e.d0=[tgt[0]+en[0],tgt[1]+en[1]];e.d1=tgt}
-      else{e.start=now;e.dur=instant?1:Math.max(1,(v?450:300)*MOTION);if(v){e.d0=tgt;e.d1=tgt;e.ds=0;e.dd=1}}
-    }else if(tgt[0]!==e.d1[0]||tgt[1]!==e.d1[1]){  // går ihop, isär – eller ut till sina platser på kartan
-      e.d0=v?curDisp(e,now):tgt;e.d1=tgt;
-      e.ds=now+(fwd&&!instant?D*(n===MAP?.25:.15):0);e.dd=instant||!v?1:Math.max(1,fwd?D*(n===MAP?.65:.6):600*MOTION);
-    }
-  }
-  const oneByOne=appearing.length&&appearing.every(e=>e.seq!==undefined);   // enheten fylls på en soldat i taget
-  let dmax=1e-6;
-  const dist=e=>e.x0!==undefined?Math.hypot((e.x0+e.x1)/2,(e.y0+e.y1)/2):Math.hypot(e.x,e.y);
-  for(const e of appearing){e.dd0=dist(e);if(e.dd0>dmax)dmax=e.dd0}
-  for(const e of appearing){
-    e.start=e===DU&&n===ZOOM?pathEnd-200*MOTION:now+(oneByOne?D*.25+e.seq*70*MOTION:D*.3+(e.dd0/dmax)*D*.6);
-    e.dur=Math.max(1,450*MOTION);
-    e.ds=e.start;e.dd=Math.max(1,(oneByOne?350:900)*MOTION);
-  }
-  const prevStep=cur;cur=n;
-  if(instant||wasSetup||isCard(n)||isCard(prevStep))fillCaption(n);else swapCaption(()=>fillCaption(n));
-  showLegend(n);navState();setHash();
+const wasSetup=SETUP;
+n=Math.max(0,Math.min(STEPS-1,n));
+if(n===cur&&!instant&&!wasSetup)return;
+const now=performance.now(),fwd=n>cur,D=instant?0:(fwd?(n===MAP?2800:1700):1100)*MOTION;
+if(n===MAP)mapT0=now;
+const from=camAt(now);
+zoomStages=[];zoomStage=-1;
+if(n===ZOOM&&fwd&&!instant){
+const keys=zoomKeys();let t=now+300*MOTION,prev=from;camPath=[];
+keys.forEach(k=>{const d=(550+430*Math.abs(Math.log(k.s/prev.s)))*MOTION;camPath.push({from:prev,to:k,t0:t,d});zoomStages.push(t+d*.45);t+=d+480*MOTION;prev=k});
+camTo=keys[keys.length-1];
+}else{camTo=fit(n);camPath=instant?[]:[{from,to:camTo,t0:now,d:Math.max(1,D)}];if(n===ZOOM)zoomStage=INZ.length-1}
+const last=camPath[camPath.length-1],pathEnd=last?last.t0+last.d:now;
+wFrom=whiteAt(now);wTo=isMap(n)?0:1;wT0=now+(fwd?D*.05:0);wD=instant?1:Math.max(1,fwd?D*.5:D*.6);
+const appearing=[];
+for(const e of ELS){
+const v=visAt(e,n),tgt=dispAt(e,n);
+if(v!==e.vis){
+e.from=tw(e,now).a;e.vis=v;
+if(v&&fwd&&!instant){appearing.push(e);const en=e.enter||[0,0];e.d0=[tgt[0]+en[0],tgt[1]+en[1]];e.d1=tgt}
+else{e.start=now;e.dur=instant?1:Math.max(1,(v?450:300)*MOTION);if(v){e.d0=tgt;e.d1=tgt;e.ds=0;e.dd=1}}
+}else if(tgt[0]!==e.d1[0]||tgt[1]!==e.d1[1]){
+e.d0=v?curDisp(e,now):tgt;e.d1=tgt;
+e.ds=now+(fwd&&!instant?D*(n===MAP?.25:.15):0);e.dd=instant||!v?1:Math.max(1,fwd?D*(n===MAP?.65:.6):600*MOTION);
 }
-
+}
+const oneByOne=appearing.length&&appearing.every(e=>e.seq!==undefined);
+let dmax=1e-6;
+const dist=e=>e.x0!==undefined?Math.hypot((e.x0+e.x1)/2,(e.y0+e.y1)/2):Math.hypot(e.x,e.y);
+for(const e of appearing){e.dd0=dist(e);if(e.dd0>dmax)dmax=e.dd0}
+for(const e of appearing){
+e.start=e===DU&&n===ZOOM?pathEnd-200*MOTION:now+(oneByOne?D*.25+e.seq*70*MOTION:D*.3+(e.dd0/dmax)*D*.6);
+e.dur=Math.max(1,450*MOTION);
+e.ds=e.start;e.dd=Math.max(1,(oneByOne?350:900)*MOTION);
+}
+const prevStep=cur;cur=n;
+if(instant||wasSetup||isCard(n)||isCard(prevStep))fillCaption(n);else swapCaption(()=>fillCaption(n));
+showLegend(n);navState();setHash();
+}
 addEventListener('keydown',e=>{
-  if(e.target&&e.target.tagName==='INPUT')return;   // sökrutan sköter sina egna tangenter
-  if(SETUP){
-    if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(0)}
-    else if(e.key==='/'){e.preventDefault();sokIn.focus()}
-    return;
-  }
-  if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(cur+1)}
-  else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){e.preventDefault();cur===0?openSetup():go(cur-1)}
-  else if(e.key==='Home'){e.preventDefault();go(0)}
-  else if(e.key==='End'){e.preventDefault();go(STEPS-1)}
-  else if(e.key==='s'||e.key==='S'){e.preventDefault();openSetup()}
+if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(cur+1)}
+else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){e.preventDefault();if(cur>0)go(cur-1)}
+else if(e.key==='Home'){e.preventDefault();go(0)}
+else if(e.key==='End'){e.preventDefault();go(STEPS-1)}
 });
-
 function resize(){
-  dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;
-  for(const c of [cv,mc]){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
-  measure();mapKey='';
-  if(SETUP){camTo=setupFit();camPath=[]}else{camTo=fit(cur);camPath=[]}
+dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;
+for(const c of [cv,mc]){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
+measure();mapKey='';
+camTo=fit(cur);camPath=[]
 }
 addEventListener('resize',resize);
-
-// ===================== Bild 0: inställningar =====================
-const sokIn=$('sok'),traffar=$('traffar'),tip=$('tip');
-let hits=[],hitI=0,hoverP=null;
-function setupArea(){const pr=$('setup'),wide=W>760;
-  const x=wide?pr.offsetLeft+pr.offsetWidth+24:16,y=wide?24:pr.offsetTop+pr.offsetHeight+12;
-  return {x,y,w:Math.max(120,W-x-(wide?24:16)),h:Math.max(120,H-y-(wide?84:88))}}
-function setupFit(){const a=setupArea(),b=bboxOf(F.filter(f=>f.lvl===4),LASTORG),bw=b[2]-b[0],bh=b[3]-b[1];
-  return {cx:(b[0]+b[2])/2,cy:(b[1]+b[3])/2,s:Math.min(a.w/bw,a.h/bh),ax:a.x+a.w/2,ay:a.y+a.h/2}}
-function setupNear(){const a=setupArea();return {cx:0,cy:0,s:Math.min(a.w/16,a.h/7,70),ax:a.x+a.w/2,ay:a.y+a.h/2}}
-function visaVald(){const an=anrop(ME),id=anropId(ME);$('valdBet').textContent=an?an+(id?'  ('+id+')':''):betText(ME);$('valdBef').textContent=befattning(ME);$('valdEnh').textContent=enhetNamn(ME);$('valdFull').textContent=anropFull(ME)||''}
-function openSetup(){
-  const from=camAt(performance.now());
-  go(LASTORG,true);
-  SETUP=true;document.body.classList.add('inst');stopRotation();stopRoles();cardShown=-1;
-  camTo=setupFit();camPath=[{from,to:camTo,t0:performance.now(),d:800*MOTION}];
-  visaVald();navState();setHash();
-}
 function resetAnim(n){for(const e of ELS){e.vis=visAt(e,n);e.from=e.vis;e.start=0;e.dur=1;e.d0=e.d1=dispAt(e,n);e.ds=0;e.dd=1}}
-function valjISetup(p,flyg){
-  const c=camAt(performance.now()),dx=p.x,dy=p.y;
-  valj(p);resetAnim(LASTORG);measure();
-  const nc={...c,cx:c.cx-dx,cy:c.cy-dy};      // samma bild som nyss – soldaten har bara blivit ny origo
-  if(flyg){const t=setupNear();camPath=[{from:nc,to:t,t0:performance.now(),d:1200*MOTION}];camTo=t}else{camPath=[];camTo=nc}
-  visaVald();setHash();
-}
-function visaTraffar(){
-  traffar.innerHTML='';
-  if(!sokIn.value.trim())return;
-  if(!hits.length){const li=document.createElement('li');li.className='ingen';li.textContent='Ingen soldat matchar sökningen.';traffar.appendChild(li);return}
-  hits.forEach((p,i)=>{const li=document.createElement('li'),b=document.createElement('b'),s=document.createElement('span');
-    li.setAttribute('role','option');li.classList.toggle('on',i===hitI);
-    const an=anrop(p);b.textContent=an?an+' · '+p.path[2]:betText(p);s.textContent=befattning(p)+' · '+enhetNamn(p);li.append(b,s);
-    li.onmousedown=e=>e.preventDefault();
-    li.onclick=()=>{hitI=i;markera();valjISetup(p,true)};
-    traffar.appendChild(li)});
-}
-function markera(){[...traffar.children].forEach((li,k)=>li.classList.toggle('on',k===hitI));const li=traffar.children[hitI];if(li)li.scrollIntoView({block:'nearest'})}
-sokIn.addEventListener('input',()=>{hits=sok(sokIn.value);hitI=0;visaTraffar();if(hits.length===1)valjISetup(hits[0],true)});
-sokIn.addEventListener('keydown',e=>{
-  if(e.key==='ArrowDown'&&hits.length){e.preventDefault();hitI=Math.min(hits.length-1,hitI+1);markera();valjISetup(hits[hitI],true)}
-  else if(e.key==='ArrowUp'&&hits.length){e.preventDefault();hitI=Math.max(0,hitI-1);markera();valjISetup(hits[hitI],true)}
-  else if(e.key==='Enter'){e.preventDefault();if(hits[hitI]&&hits[hitI]!==ME)valjISetup(hits[hitI],true);else if(SETUP)go(0)}
-  else if(e.key==='Escape'){sokIn.blur()}
-});
-$('starta').onclick=()=>go(0);
-
-// zooma, flytta och klicka i översikten
-const ptrs=new Map();let drag=null,pinch=null;
-function camNow(){const c=camAt(performance.now());camPath=[];camTo={...c};return camTo}
-function zoomAt(c,px,py,f){const smin=setupFit().s*.5,wx=c.cx+(px-c.ax)/c.s,wy=c.cy+(py-c.ay)/c.s,s=Math.max(smin,Math.min(160,c.s*f));
-  c.s=s;c.cx=wx-(px-c.ax)/s;c.cy=wy-(py-c.ay)/s}
-function pick(x,y){
-  const c=camAt(performance.now()),R0=Math.min(1.25*Math.pow(c.s,.52),.36*c.s),lim=Math.max(7,R0*1.7);let best=null,bd=lim*lim;
-  for(const p of P){const X=c.ax+(p.x-c.cx)*c.s,Y=c.ay+(p.y-c.cy)*c.s,d=(X-x)*(X-x)+(Y-y)*(Y-y);if(d<bd){bd=d;best=p}}
-  return best;
-}
-function visaTip(p,x,y){
-  if(!p){tip.classList.remove('on');return}
-  tip.innerHTML='';const b=document.createElement('b');b.textContent=betText(p);tip.append(b,document.createElement('br'),befattning(p));
-  const an=anrop(p);if(an){tip.append(document.createElement('br'),'Anrop: '+an)}
-  const w=tip.offsetWidth;tip.style.transform=`translate(${Math.min(x+14,W-w-8)}px,${y+16}px)`;tip.classList.add('on');
-}
-cv.addEventListener('wheel',e=>{if(!SETUP)return;e.preventDefault();const c=camNow();
-  zoomAt(c,e.clientX,e.clientY,Math.exp(-e.deltaY*(e.deltaMode===1?.05:e.deltaMode===2?1:.0015)))},{passive:false});
-cv.addEventListener('pointerdown',e=>{if(!SETUP)return;cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(ptrs.size===1)drag={x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,moved:false};
-  if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),mx:(a.x+b.x)/2,my:(a.y+b.y)/2};if(drag)drag.moved=true}
-  tip.classList.remove('on')});
-cv.addEventListener('pointermove',e=>{if(!SETUP)return;
-  if(ptrs.has(e.pointerId)){ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,c=camNow();
-      c.cx-=(mx-pinch.mx)/c.s;c.cy-=(my-pinch.my)/c.s;zoomAt(c,mx,my,d/Math.max(1,pinch.d));pinch={d,mx,my};return}
-    if(drag){if(Math.hypot(e.clientX-drag.x0,e.clientY-drag.y0)>5)drag.moved=true;
-      if(drag.moved){const c=camNow();c.cx-=(e.clientX-drag.x)/c.s;c.cy-=(e.clientY-drag.y)/c.s;cv.classList.add('drag')}
-      drag.x=e.clientX;drag.y=e.clientY}
-    return}
-  if(e.pointerType==='mouse'){hoverP=pick(e.clientX,e.clientY);cv.classList.toggle('peka',!!hoverP);visaTip(hoverP,e.clientX,e.clientY)}
-});
-function pointerEnd(e){if(!ptrs.has(e.pointerId))return;
-  const wasTap=drag&&!drag.moved&&ptrs.size===1;ptrs.delete(e.pointerId);
-  if(ptrs.size<2)pinch=null;
-  if(!ptrs.size){if(wasTap&&SETUP){const p=pick(e.clientX,e.clientY);if(p&&p!==ME){sokIn.value='';hits=[];visaTraffar();valjISetup(p,false)}}drag=null;cv.classList.remove('drag')}
-}
-cv.addEventListener('pointerup',pointerEnd);cv.addEventListener('pointercancel',pointerEnd);
-cv.addEventListener('pointerleave',()=>{if(SETUP&&!ptrs.size){hoverP=null;tip.classList.remove('on')}});
-
-// ===================== Bildruta =====================
 function frame(now){
-  const c=camAt(now),wa=whiteAt(now);
-  ctx.setTransform(1,0,0,1,0,0);
-  if(wa<.999){                                    // kartan under det vita kortet
-    const key=c.cx+','+c.cy+','+c.s+','+W+','+H;
-    if(key!==mapKey){renderMap(c);mapKey=key}
-    ctx.drawImage(mc,0,0);
-  }
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  if(wa>.001){                                    // vitt kort på mörk botten, som i Växjömallarna
-    ctx.globalAlpha=wa;ctx.fillStyle='#2c3a2f';ctx.fillRect(0,0,W,H);
-    ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=30;ctx.fillStyle='#f6f4ec';rr(ctx,10,10,W-20,H-20,16);ctx.fill();
-    ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.globalAlpha=1;
-  }
-  const SX=x=>c.ax+(x-c.cx)*c.s,SY=y=>c.ay+(y-c.cy)*c.s,mapA=1-wa;
-  const R0=Math.min(1.25*Math.pow(c.s,.52),.36*c.s);   // markeringarna krymper – men långsammare än avstånden
-  const allMen=CFG.langtUt==='soldater';
-  const soldierA=allMen?1:ramp(c.s,2.4,3.6),blockA=1-soldierA;
-
-  // ramar med förbandstecken (• grupp, ••• pluton, | kompani, || bataljon), rörlighet och regioner
-  for(const f of F){
-    const a=tw(f,now).a;if(a<.01)continue;
-    const d=curDisp(f,now),X0=SX(f.x0+d[0]),Y0=SY(f.y0+d[1]),X1=SX(f.x1+d[0]),Y1=SY(f.y1+d[1]),w=X1-X0,h=Y1-Y0;
-    if(X1<-30||X0>W+30||Y1<-30||Y0>H+30)continue;
-    const fillC=f.own?'212,160,23':'59,94,64';
-    if(f.lvl===2&&blockA>.01){rr(ctx,X0,Y0,w,h,Math.min(4,h*.3));ctx.fillStyle=`rgba(${fillC},${.55*a*blockA})`;ctx.fill()}
-    const al=a*(f.lvl===0?ramp(c.s,20,40):f.lvl>=3?1:ramp(w,30,100));if(al<.01)continue;
-    const col=f.own?'176,130,10':'59,94,64';
-    rr(ctx,X0,Y0,w,h,Math.min(f.lvl===4?18:14,w*.06,h*.3));
-    if(f.own&&f.lvl>=1&&f.lvl<=3){ctx.fillStyle=`rgba(212,160,23,${.05*al})`;ctx.fill()}
-    ctx.strokeStyle=`rgba(${col},${[.4,.5,.6,.7,.75][f.lvl]*al})`;ctx.lineWidth=[1,1.2,1.6,2,2.2][f.lvl];ctx.stroke();
-    ctx.fillStyle=`rgba(${col},${.85*al})`;ctx.strokeStyle=`rgba(${col},${.85*al})`;
-    const mx=(X0+X1)/2,my=Y0-8;
-    if(f.lvl===0){ctx.beginPath();ctx.arc(X0-9,(Y0+Y1)/2,2.7,0,Math.PI*2);ctx.fill()}   // gruppens tecken till vänster om ledet
-    if(f.lvl===1&&w>56){
-      ctx.beginPath();for(const o of f.tropp?[-4,4]:[-8,0,8]){ctx.moveTo(mx+o+2.7,my-5);ctx.arc(mx+o,my-5,2.7,0,Math.PI*2)}ctx.fill();   // •• tropp, ••• pluton
-      if(f.mob&&w>90)mob(ctx,mx,Y1+9,f.mob);
-      if(f.tag&&w>80){ctx.font='600 10px "Barlow Condensed",system-ui,sans-serif';ctx.textAlign='left';ctx.fillText(f.tag,X0+3,my-14)}   // Ledningspluton, Grk-pluton …
-    }
-    if(f.lvl===2&&w>150)ctx.fillRect(mx-1.25,my-11,2.5,12);
-    if(f.lvl===3&&w>56){ctx.fillRect(mx-4.5,my-11,2.5,12);ctx.fillRect(mx+2,my-11,2.5,12)}
-    const lab=f.lvl===4?f.label:f.lvl===3?(w>230?f.label:w>45?f.short:''):f.lvl===2?(w>160?f.label:w>60?f.short:''):'';
-    if(lab){                                      // region; bataljon och kompani: numret när de syns, hela namnet när det får plats
-      const big=f.own&&f.lvl===2&&lab===f.label;   // det egna kompaniet lite större
-      ctx.font=`700 ${f.lvl===4?14:big?17:11}px "Barlow Condensed",system-ui,sans-serif`;ctx.textAlign='left';
-      ctx.fillStyle=f.own?`rgba(107,83,0,${al})`:`rgba(36,56,42,${al})`;ctx.fillText(lab,X0+(f.lvl===4?6:3),Y0-(f.lvl===4?9:big?8:5));
-    }
-  }
-
-  // soldaterna
-  const roleId=!SETUP&&isCard(cur)&&CFG.steg[cur].roller&&roleActive>=0&&ROLLER[roleActive]?ROLLER[roleActive].id:null;
-  const tagA=ramp(R0,6.5,8.5),square=R0<2.2;
-  let shown=0;
-  for(const p of P){
-    if(p.vis===1&&now>=p.start)shown++;           // räknaren tickar i takt med att de dyker upp
-    if(p.own||soldierA<.2)continue;
-    const t=tw(p,now);if(t.a<.01)continue;
-    const d=curDisp(p,now),X=SX(p.x+d[0]),Y=SY(p.y+d[1]);if(X<-60||X>W+60||Y<-60||Y>H+60)continue;
-    const r=R0*(p.vis&&p.from<1?.3+.7*easeBack(t.p):1);
-    let al=t.a*soldierA,hi=false;
-    if(roleId&&p.ownK){hi=roleMatch(p,roleId);if(!hi)al*=.28}   // rollbilden: de som har rollen lyser, resten tonas ner
-    if(square){const q=Math.max(allMen?.6:0,r);ctx.globalAlpha=al;ctx.fillStyle=colOf(p)[0];ctx.fillRect(X-q,Y-q,2*q,2*q);continue}
-    if(hi){ctx.globalAlpha=t.a;ctx.fillStyle='rgba(255,196,40,.38)';ctx.beginPath();ctx.arc(X,Y,r*2.3,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle='rgba(201,132,0,.9)';ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1}
-    sym(ctx,X,Y,r,p,al);
-    const tA=roleId==='kl'&&p.ownK?1:roleId&&p.ownK?0:tagA;
-    if(p.tag&&tA>0){
-      const fs=Math.min(13,Math.max(10,R0*1.3));ctx.font=`700 ${fs}px "Barlow Condensed",system-ui,sans-serif`;
-      const tw2=ctx.measureText(p.tag).width+10,ty=Y-R0*1.6-fs-8;
-      ctx.globalAlpha=t.a*tA;rr(ctx,X-tw2/2,ty,tw2,fs+6,5);ctx.fillStyle='#fff';ctx.fill();
-      ctx.strokeStyle='rgba(31,42,32,.35)';ctx.lineWidth=1;ctx.stroke();
-      ctx.fillStyle=colOf(p)[1];ctx.textAlign='center';ctx.fillText(p.tag,X,ty+fs+1);
-    }
-  }
-  ctx.globalAlpha=1;
-
-  // bild 0: soldaten under muspekaren
-  if(SETUP&&hoverP&&hoverP!==ME){const X=SX(hoverP.x),Y=SY(hoverP.y),r=Math.max(6,R0*1.7);
-    ctx.strokeStyle='rgba(59,94,64,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X,Y,r,0,Math.PI*2);ctx.stroke()}
-
-  // ortnamn och militärregioner på kartan
-  if(mapA>.01){
-    const regA=1-ramp(c.s,2.6,4.5);
-    if(regA>.01)CFG.regioner.forEach(R=>{if(!R.etikettPa)return;const [x,y]=geo(...R.etikettPa);ctx.globalAlpha=mapA*regA;
-      label(ctx,R.namn,SX(x),SY(y),'800 15px "Barlow Condensed",system-ui,sans-serif',R.id===OWNREG?'#6b5300':'#24382a','center')});
-    for(const [namn,lat,lon,egen] of ORTER){
-      const [x,y]=geo(lat,lon),X=SX(x),Y=SY(y);if(X<-80||X>W+80||Y<-30||Y>H+30)continue;
-      let la=mapA*(egen?1:1-ramp(c.s,3,6));
-      if(egen){                                   // den egna orten: tänds och blinkar 3 s in på kartbilden, släckt på rollbilden
-        if(isCard(cur)&&CFG.steg[cur].roller)la=0;
-        else if(cur===MAP){const e=now-mapT0-3000;la*=ramp(e,0,400);
-          if(e>0){const ph=(e%1100)/1100;ctx.globalAlpha=mapA*(1-ph)*.9;ctx.strokeStyle='#d4a017';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X,Y,6+ph*24,0,Math.PI*2);ctx.stroke()}}}
-      if(la<.01)continue;
-      ctx.globalAlpha=la;
-      ctx.fillStyle=egen?'#6b5300':'#33424d';ctx.fillRect(X-3,Y-3,6,6);
-      label(ctx,namn,X+7,Y+4,`${egen?800:600} ${egen?14:12}px "Barlow Condensed",system-ui,sans-serif`,egen?'#6b5300':'#33424d');
-    }
-    ctx.globalAlpha=1;
-  }
-
-  // den valda soldaten: egen färg, pulserande ring, överst
-  const ma=tw(ME,now).a;
-  if(ma>.01){
-    const dm=curDisp(ME,now),X=SX(ME.x+dm[0]),Y=SY(ME.y+dm[1]),R=Math.max(3.2,R0*1.15),ph=(now%1800)/1800;
-    ctx.globalAlpha=ma;
-    ctx.fillStyle='rgba(212,160,23,.2)';ctx.beginPath();ctx.arc(X,Y,R+5,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle=`rgba(212,160,23,${.6*(1-ph)})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(X,Y,R+6+ph*20,0,Math.PI*2);ctx.stroke();
-    sym(ctx,X,Y,R,ME,ma);
-    const du=tw(DU,now).a;
-    if(du>.01){
-      ctx.font='700 14px "Barlow Condensed",system-ui,sans-serif';
-      const w=ctx.measureText(CFG.du).width+18,h=24,px=X-R-26-w,py=Y-R-20-h/2;
-      ctx.globalAlpha=du*ma;
-      ctx.strokeStyle='#8a6a00';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(px+w,py+h/2);ctx.lineTo(X-R*.75,Y-R*.75);ctx.stroke();
-      rr(ctx,px,py,w,h,12);ctx.fillStyle='#d4a017';ctx.fill();
-      ctx.fillStyle='#1f2a20';ctx.textAlign='center';ctx.fillText(CFG.du,px+w/2,py+17);
-    }
-    ctx.globalAlpha=1;
-  }
-
-  // inzoomningens rubriker byts nivå för nivå
-  if(!SETUP&&cur===ZOOM&&zoomStages.length){
-    let st=-1;for(let i=0;i<zoomStages.length;i++)if(now>=zoomStages[i])st=i;
-    if(st!==zoomStage&&st>=0){zoomStage=st;swapCaption(()=>fillCaption(ZOOM))}
-  }else if(!SETUP&&cur!==ZOOM&&!isCard(cur)&&shown!==numShown){$('num').textContent=fmt(shown);numShown=shown}
-  requestAnimationFrame(frame);
+const c=camAt(now),wa=whiteAt(now);
+ctx.setTransform(1,0,0,1,0,0);
+if(wa<.999){
+const key=c.cx+','+c.cy+','+c.s+','+W+','+H;
+if(key!==mapKey){renderMap(c);mapKey=key}
+ctx.drawImage(mc,0,0);
 }
-
-// teckenförklaringens små symboler
+ctx.setTransform(dpr,0,0,dpr,0,0);
+if(wa>.001){
+ctx.globalAlpha=wa;ctx.fillStyle='#2c3a2f';ctx.fillRect(0,0,W,H);
+ctx.shadowColor='rgba(0,0,0,.25)';ctx.shadowBlur=30;ctx.fillStyle='#f6f4ec';rr(ctx,10,10,W-20,H-20,16);ctx.fill();
+ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.globalAlpha=1;
+}
+const SX=x=>c.ax+(x-c.cx)*c.s,SY=y=>c.ay+(y-c.cy)*c.s,mapA=1-wa;
+const R0=Math.min(1.25*Math.pow(c.s,.52),.36*c.s);
+const allMen=CFG.langtUt==='soldater';
+const soldierA=allMen?1:ramp(c.s,2.4,3.6),blockA=1-soldierA;
+for(const f of F){
+const a=tw(f,now).a;if(a<.01)continue;
+const d=curDisp(f,now),X0=SX(f.x0+d[0]),Y0=SY(f.y0+d[1]),X1=SX(f.x1+d[0]),Y1=SY(f.y1+d[1]),w=X1-X0,h=Y1-Y0;
+if(X1<-30||X0>W+30||Y1<-30||Y0>H+30)continue;
+const fillC=f.own?'212,160,23':'59,94,64';
+if(f.lvl===2&&blockA>.01){rr(ctx,X0,Y0,w,h,Math.min(4,h*.3));ctx.fillStyle=`rgba(${fillC},${.55*a*blockA})`;ctx.fill()}
+const al=a*(f.lvl===0?ramp(c.s,20,40):f.lvl>=3?1:ramp(w,30,100));if(al<.01)continue;
+const col=f.own?'176,130,10':'59,94,64';
+rr(ctx,X0,Y0,w,h,Math.min(f.lvl===4?18:14,w*.06,h*.3));
+if(f.own&&f.lvl>=1&&f.lvl<=3){ctx.fillStyle=`rgba(212,160,23,${.05*al})`;ctx.fill()}
+ctx.strokeStyle=`rgba(${col},${[.4,.5,.6,.7,.75][f.lvl]*al})`;ctx.lineWidth=[1,1.2,1.6,2,2.2][f.lvl];ctx.stroke();
+ctx.fillStyle=`rgba(${col},${.85*al})`;ctx.strokeStyle=`rgba(${col},${.85*al})`;
+const mx=(X0+X1)/2,my=Y0-8;
+if(f.lvl===0){ctx.beginPath();ctx.arc(X0-9,(Y0+Y1)/2,2.7,0,Math.PI*2);ctx.fill()}
+if(f.lvl===1&&w>56){
+ctx.beginPath();for(const o of f.tropp?[-4,4]:[-8,0,8]){ctx.moveTo(mx+o+2.7,my-5);ctx.arc(mx+o,my-5,2.7,0,Math.PI*2)}ctx.fill();
+if(f.mob&&w>90)mob(ctx,mx,Y1+9,f.mob);
+if(f.tag&&w>80){ctx.font='600 10px "Barlow Condensed",system-ui,sans-serif';ctx.textAlign='left';ctx.fillText(f.tag,X0+3,my-14)}
+}
+if(f.lvl===2&&w>150)ctx.fillRect(mx-1.25,my-11,2.5,12);
+if(f.lvl===3&&w>56){ctx.fillRect(mx-4.5,my-11,2.5,12);ctx.fillRect(mx+2,my-11,2.5,12)}
+const lab=f.lvl===4?f.label:f.lvl===3?(w>230?f.label:w>45?f.short:''):f.lvl===2?(w>160?f.label:w>60?f.short:''):'';
+if(lab){
+const big=f.own&&f.lvl===2&&lab===f.label;
+ctx.font=`700 ${f.lvl===4?14:big?17:11}px "Barlow Condensed",system-ui,sans-serif`;ctx.textAlign='left';
+ctx.fillStyle=f.own?`rgba(107,83,0,${al})`:`rgba(36,56,42,${al})`;ctx.fillText(lab,X0+(f.lvl===4?6:3),Y0-(f.lvl===4?9:big?8:5));
+}
+}
+const roleId=!SETUP&&isCard(cur)&&CFG.steg[cur].roller&&roleActive>=0&&ROLLER[roleActive]?ROLLER[roleActive].id:null;
+const tagA=ramp(R0,6.5,8.5),square=R0<2.2;
+let shown=0;
+for(const p of P){
+if(p.vis===1&&now>=p.start)shown++;
+if(p.own||soldierA<.2)continue;
+const t=tw(p,now);if(t.a<.01)continue;
+const d=curDisp(p,now),X=SX(p.x+d[0]),Y=SY(p.y+d[1]);if(X<-60||X>W+60||Y<-60||Y>H+60)continue;
+const r=R0*(p.vis&&p.from<1?.3+.7*easeBack(t.p):1);
+let al=t.a*soldierA,hi=false;
+if(roleId&&p.ownK){hi=roleMatch(p,roleId);if(!hi)al*=.28}
+if(square){const q=Math.max(allMen?.6:0,r);ctx.globalAlpha=al;ctx.fillStyle=colOf(p)[0];ctx.fillRect(X-q,Y-q,2*q,2*q);continue}
+if(hi){ctx.globalAlpha=t.a;ctx.fillStyle='rgba(255,196,40,.38)';ctx.beginPath();ctx.arc(X,Y,r*2.3,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle='rgba(201,132,0,.9)';ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1}
+sym(ctx,X,Y,r,p,al);
+const tA=roleId==='kl'&&p.ownK?1:roleId&&p.ownK?0:tagA;
+if(p.tag&&tA>0){
+const fs=Math.min(13,Math.max(10,R0*1.3));ctx.font=`700 ${fs}px "Barlow Condensed",system-ui,sans-serif`;
+const tw2=ctx.measureText(p.tag).width+10,ty=Y-R0*1.6-fs-8;
+ctx.globalAlpha=t.a*tA;rr(ctx,X-tw2/2,ty,tw2,fs+6,5);ctx.fillStyle='#fff';ctx.fill();
+ctx.strokeStyle='rgba(31,42,32,.35)';ctx.lineWidth=1;ctx.stroke();
+ctx.fillStyle=colOf(p)[1];ctx.textAlign='center';ctx.fillText(p.tag,X,ty+fs+1);
+}
+}
+ctx.globalAlpha=1;
+if(mapA>.01){
+const regA=1-ramp(c.s,2.6,4.5);
+if(regA>.01)CFG.regioner.forEach(R=>{if(!R.etikettPa)return;const [x,y]=geo(...R.etikettPa);ctx.globalAlpha=mapA*regA;
+label(ctx,R.namn,SX(x),SY(y),'800 15px "Barlow Condensed",system-ui,sans-serif',R.id===OWNREG?'#6b5300':'#24382a','center')});
+for(const [namn,lat,lon,egen] of ORTER){
+const [x,y]=geo(lat,lon),X=SX(x),Y=SY(y);if(X<-80||X>W+80||Y<-30||Y>H+30)continue;
+let la=mapA*(egen?1:1-ramp(c.s,3,6));
+if(egen){
+if(isCard(cur)&&CFG.steg[cur].roller)la=0;
+else if(cur===MAP){const e=now-mapT0-3000;la*=ramp(e,0,400);
+if(e>0){const ph=(e%1100)/1100;ctx.globalAlpha=mapA*(1-ph)*.9;ctx.strokeStyle='#d4a017';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X,Y,6+ph*24,0,Math.PI*2);ctx.stroke()}}}
+if(la<.01)continue;
+ctx.globalAlpha=la;
+ctx.fillStyle=egen?'#6b5300':'#33424d';ctx.fillRect(X-3,Y-3,6,6);
+label(ctx,namn,X+7,Y+4,`${egen?800:600} ${egen?14:12}px "Barlow Condensed",system-ui,sans-serif`,egen?'#6b5300':'#33424d');
+}
+ctx.globalAlpha=1;
+}
+const ma=tw(ME,now).a;
+if(ma>.01){
+const dm=curDisp(ME,now),X=SX(ME.x+dm[0]),Y=SY(ME.y+dm[1]),R=Math.max(3.2,R0*1.15),ph=(now%1800)/1800;
+ctx.globalAlpha=ma;
+ctx.fillStyle='rgba(212,160,23,.2)';ctx.beginPath();ctx.arc(X,Y,R+5,0,Math.PI*2);ctx.fill();
+ctx.strokeStyle=`rgba(212,160,23,${.6*(1-ph)})`;ctx.lineWidth=2;ctx.beginPath();ctx.arc(X,Y,R+6+ph*20,0,Math.PI*2);ctx.stroke();
+sym(ctx,X,Y,R,ME,ma);
+const du=tw(DU,now).a;
+if(du>.01){
+ctx.font='700 14px "Barlow Condensed",system-ui,sans-serif';
+const w=ctx.measureText(CFG.du).width+18,h=24,px=X-R-26-w,py=Y-R-20-h/2;
+ctx.globalAlpha=du*ma;
+ctx.strokeStyle='#8a6a00';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(px+w,py+h/2);ctx.lineTo(X-R*.75,Y-R*.75);ctx.stroke();
+rr(ctx,px,py,w,h,12);ctx.fillStyle='#d4a017';ctx.fill();
+ctx.fillStyle='#1f2a20';ctx.textAlign='center';ctx.fillText(CFG.du,px+w/2,py+17);
+}
+ctx.globalAlpha=1;
+}
+if(!SETUP&&cur===ZOOM&&zoomStages.length){
+let st=-1;for(let i=0;i<zoomStages.length;i++)if(now>=zoomStages[i])st=i;
+if(st!==zoomStage&&st>=0){zoomStage=st;swapCaption(()=>fillCaption(ZOOM))}
+}else if(!SETUP&&cur!==ZOOM&&!isCard(cur)&&shown!==numShown){$('num').textContent=fmt(shown);numShown=shown}
+requestAnimationFrame(frame);
+}
 legend.querySelectorAll('canvas[data-sym]').forEach(c=>{
-  const k=c.dataset.sym;c.width=56;c.height=48;const g=c.getContext('2d');g.scale(2,2);
-  sym(g,14,8.5,5,{own:k==='own',role:k==='led'?'chef':['chef','stf','kf'].includes(k)?k:'',led:k==='led'},1);
+const k=c.dataset.sym;c.width=56;c.height=48;const g=c.getContext('2d');g.scale(2,2);
+sym(g,14,8.5,5,{own:k==='own',role:k==='led'?'chef':['chef','stf','kf'].includes(k)?k:'',led:k==='led'},1);
 });
 legend.querySelectorAll('canvas[data-mob]').forEach(c=>{
-  c.width=56;c.height=48;const g=c.getContext('2d');g.scale(2,2);g.strokeStyle='#3b5e40';mob(g,14,12,c.dataset.mob);
+c.width=56;c.height=48;const g=c.getContext('2d');g.scale(2,2);g.strokeStyle='#3b5e40';mob(g,14,12,c.dataset.mob);
 });
-
-// svep för att bläddra på pekskärm
 { let sx=0,sy=0,st=0,act=false;
-  const start=e=>{if(SETUP||e.touches.length!==1){act=false;return}act=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=performance.now()};
-  const end=e=>{if(!act||SETUP)return;act=false;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
-    if(performance.now()-st<700&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.3){if(dx<0)go(cur+1);else if(cur===0)openSetup();else go(cur-1)}};
-  for(const el of [cv,cap,$('kort')]){el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})}
-  let visad=false;const svep=$('svep');
-  const tipsa=()=>{if(visad||!matchMedia('(pointer:coarse)').matches)return;visad=true;setTimeout(()=>{svep.classList.add('on');setTimeout(()=>svep.classList.remove('on'),2600)},600)};
-  $('starta').addEventListener('click',tipsa);$('next').addEventListener('click',()=>{if(!SETUP)tipsa()});
-  addEventListener('load',()=>{if(!SETUP)tipsa()});
+const start=e=>{if(SETUP||e.touches.length!==1){act=false;return}act=true;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=performance.now()};
+const end=e=>{if(!act||SETUP)return;act=false;const t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+if(performance.now()-st<700&&Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.3){if(dx<0)go(cur+1);else if(cur>0)go(cur-1)}};
+for(const el of [cv,cap,$('kort')]){el.addEventListener('touchstart',start,{passive:true});el.addEventListener('touchend',end,{passive:true})}
+let visad=false;const svep=$('svep');
+const tipsa=()=>{if(visad||!matchMedia('(pointer:coarse)').matches)return;visad=true;setTimeout(()=>{svep.classList.add('on');setTimeout(()=>svep.classList.remove('on'),2600)},600)};
+$('next').addEventListener('click',()=>{if(!SETUP)tipsa()});
+addEventListener('load',tipsa);
 }
-
-// start: #<bild>/<soldat>, t.ex. #4/33-333-B-E-05 – bild 0 (eller ingen adress) öppnar inställningarna
 { const [h0,h1]=decodeURIComponent(location.hash.slice(1)).split('/'),h=parseInt(h0,10);
-  valj(KOD.get((h1||'').toLowerCase())||KOD.get(CFG.standard.toLowerCase())||P[0]);
-  cur=h>=1&&h<=STEPS?h-1:LASTORG;
-  resetAnim(cur);
-  wFrom=wTo=isMap(cur)?0:1;
-  if(cur===ZOOM)zoomStage=INZ.length-1;
-  resize();go(cur,true);
-  if(!(h>=1&&h<=STEPS)){openSetup();camPath=[]}
-  requestAnimationFrame(frame);
+valj(P.find(p=>betKod(p).toLowerCase()===CFG.standard.toLowerCase())||P[0]);
+cur=h>=1&&h<=STEPS?h-1:0;
+resetAnim(cur);
+wFrom=wTo=isMap(cur)?0:1;
+if(cur===ZOOM)zoomStage=INZ.length-1;
+resize();go(cur,true);
+requestAnimationFrame(frame);
 }
 </script>
 </body>
