@@ -6,6 +6,7 @@
 <title>333 · Kompanimiddagen</title>
 <meta name="description" content="Bordshäftet från 333. Hemvärnsinsatskompaniets kompanimiddag – test, ordlista, gnällmall och mer.">
 <meta name="theme-color" content="#3b4a3e">
+<meta name="color-scheme" content="only light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
@@ -144,6 +145,7 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
   <h1>Kompani&shy;middagen</h1>
   <p>Bordshäftet, fast i fickan.</p>
   <div class="links">
+    <!-- PRESENTATION: ta bort denna rad och raden SLUT PRESENTATION för att visa
     <a href="presentation.html" id="lnkPres" hidden>
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="M10 8l4 2-4 2z" fill="currentColor"/></svg>
       <span>Från soldat till hemvärnet<small>Presentationen från kvällen</small></span>
@@ -152,6 +154,7 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
       <span>Presentationen<small>Låses upp efter föredraget</small></span>
     </div>
+    SLUT PRESENTATION -->
     <a href="sok.html" id="lnkSok" hidden>
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
       <span>Sök i FAL-A<small>Hitta anrop och befattning</small></span>
@@ -676,11 +679,15 @@ function tick(now){
 }
 $('fira').addEventListener('click', function(){ release(); burst(); });
 
-/* ---------- Presentation och sök: knapparna visas när filerna finns i repot ---------- */
+/* ---------- Presentation och sök: knapparna visas när de är upplåsta ---------- */
 function finns(url, cb){
   try { fetch(url, {method:'HEAD', cache:'no-store'}).then(function(r){ cb(r.ok); }, function(){ cb(false); }); } catch (e) { cb(false); }
 }
-finns('presentation.html', function(ok){ $('lnkPres').hidden = !ok; $('lockPres').hidden = ok; });
+try {   // presentationen visas när raden data-visa="1" står överst i presentation.html
+  fetch('presentation.html', {cache:'no-store'}).then(function(r){ return r.ok ? r.text() : ''; }).then(function(t){
+    var ok = /data-visa="1"/.test(t.slice(0, 400)); $('lnkPres').hidden = !ok; $('lockPres').hidden = ok;
+  }, function(){});
+} catch (e) {}
 finns('sok.html', function(ok){ $('lnkSok').hidden = !ok; });
 })();
 </script>
