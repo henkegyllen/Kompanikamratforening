@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="sv">
 <head>
@@ -674,15 +675,16 @@ function tick(now){
 $('fira').addEventListener('click', function(){ release(); burst(); });
 
 /* ---------- Presentation och sök: knapparna visas när de är upplåsta ---------- */
-function finns(url, cb){
-  try { fetch(url, {method:'HEAD', cache:'no-store'}).then(function(r){ cb(r.ok); }, function(){ cb(false); }); } catch (e) { cb(false); }
-}
 try {   // presentationen visas när raden data-visa="1" står överst i presentation.html
   fetch('presentation.html', {cache:'no-store'}).then(function(r){ return r.ok ? r.text() : ''; }).then(function(t){
     var ok = /data-visa="1"/.test(t.slice(0, 400)); $('lnkPres').hidden = !ok;
   }, function(){});
 } catch (e) {}
-finns('sok.html', function(ok){ $('lnkSok').hidden = !ok; });
+try {   // sökningen visas när raden data-visa="1" står överst i sok.html
+  fetch('sok.html', {cache:'no-store'}).then(function(r){ return r.ok ? r.text() : ''; }).then(function(t){
+    $('lnkSok').hidden = !/data-visa="1"/.test(t.slice(0, 400));
+  }, function(){});
+} catch (e) {}
 })();
 </script>
 </body>
