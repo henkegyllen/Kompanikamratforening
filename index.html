@@ -254,7 +254,7 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
     <div class="t" style="font-size:20px;margin-top:4px">Ingenting. Än.</div>
     <div style="height:10px;border-radius:5px;background:rgba(0,0,0,.25);margin-top:12px;overflow:hidden"><span id="dbar" style="display:block;height:100%;width:0;background:var(--yellow);transition:width .3s"></span></div>
   </div>
-  <p class="obs">Visa resultatet för din soldat. Skulden förfaller till betalning omgående och kan inte bytas mot fältransoner.</p>
+  <p class="obs">Visa resultatet för din soldat. Skulden förfaller till betalning omgående och kan inte bytas mot rationer.</p>
 </section>
 
 <section id="vader">
@@ -286,22 +286,22 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
   <p class="kmsg" id="kmsg" aria-live="polite"></p>
   <div class="clues">
     <div><h3>Vågrätt</h3><ol>
-      <li><b>3</b> Utför hjältedåd, får beröm (6)</li>
-      <li><b>5</b> Betyder inte att det blir gjort (9)</li>
-      <li><b>6</b> Första hjälpen alla soldater kan (11)</li>
-      <li><b>9</b> Förekommer på varje övning (4)</li>
-      <li><b>10</b> Där man ligger och väntar. Länge. (9)</li>
-      <li><b>12</b> Varje mening slutar med ”kom” (7)</li>
+      <li><b>1</b> Årets stora övning, förk. (3)</li>
+      <li><b>2</b> Förekommer på varje övning (4)</li>
+      <li><b>4</b> Varje mening slutar med ”kom” (7)</li>
+      <li><b>8</b> Där man ligger och väntar. Länge. (9)</li>
+      <li><b>9</b> Håller kaminen vid liv på natten (7)</li>
+      <li><b>10</b> Får gediget mest skäll (9)</li>
+      <li><b>12</b> Tar sig fram överallt. Långsamt. (8)</li>
       <li><b>13</b> Allt går in, inget kommer ut (5)</li>
-      <li><b>14</b> Soldatens naturliga tillstånd (5)</li>
     </ol></div>
     <div><h3>Lodrätt</h3><ol>
-      <li><b>1</b> Mat i påse, bäst kl 03 (10)</li>
-      <li><b>2</b> Bärs av någon som inte valde det (3)</li>
-      <li><b>4</b> Får gediget mest skäll (9)</li>
-      <li><b>6</b> Årets stora övning, förk. (3)</li>
-      <li><b>7</b> Tar sig fram överallt. Långsamt. (8)</li>
-      <li><b>8</b> Håller kaminen vid liv på natten (7)</li>
+      <li><b>1</b> Första hjälpen alla soldater kan (11)</li>
+      <li><b>2</b> Mat i påse, bäst kl 03 (6)</li>
+      <li><b>3</b> Bärs av någon som inte valde det (3)</li>
+      <li><b>5</b> Utför hjältedåd, får beröm (6)</li>
+      <li><b>6</b> Soldatens naturliga tillstånd (5)</li>
+      <li><b>7</b> Betyder inte att det blir gjort (9)</li>
       <li><b>11</b> Gäller ofta i tio minuter (5)</li>
     </ol></div>
   </div>
@@ -410,12 +410,12 @@ go('start');
 /* ---------- Middagsbingo ---------- */
 var BI = [
   'Någon avslutar med ”kom”','Någon säger ”uppfattat”','KC nämner regn','Samma övnings\u00ADhistoria två gånger',
-  'Någon har ätit upp innan alla satt sig','En bild på en bandvagn visas','”Det var värre på min tid”','Någon pratar om nästa övning',
-  'En förkortning ingen civil förstår','Maten kallas ”utspisning”','Någon har pannlampa med sig','Någon klagar på kaffet',
-  'Någon säger ”fältmässigt”','Ett tal drar över tiden','”När jag låg på KFÖ …”','Någon gnäller – med glädje',
-  '”Bra terräng” utanför fönstret','Fältransoner omtalas med värme','Någon bär något grönt','Någon visar sin kniv',
+  'Någon har ätit upp innan alla satt sig','En bild på en bandvagn visas','”På min tid …”','Någon pratar om nästa övning',
+  'En förkortning ingen civil förstår','”Utspisning”','Någon har med och visar sin ficklampa','Någon klagar på kaffet',
+  'Någon säger ”fältmässigt”','Ett tal drar över tiden','”När jag låg på/vid …”','Någon gnäller – med glädje',
+  '”Bra terräng” utanför fönstret','Rationer omtalas med värme','Någon har på sig M-materiel','Någon visar sin kniv',
   '”Order är order”','En anhörig säger ”kom”','Någon bokstaverar sitt namn','Tiden anges som ”nittonhundra”',
-  'Någon somnar nästan vid bordet','Någon pratar om kaminen','Blöta kängor nämns','”Det löser sig”',
+  'Någon säger ”ankedot” i stället för ”anekdot”','Någon pratar om kaminen','Blöta kängor nämns','”Det löser sig”',
   'Skål för de anhöriga','Någon nämner KSP:n','”Vi tar det på nästa övning”','Sömnbrist nämns som en merit'
 ];
 var BKEY = 'kkf-bingo-1', bstate = null, blines = 0;
@@ -473,7 +473,7 @@ var W = [
   ['Eldpost','Håller kaminen vid liv medan alla andra snarkar. Post = vakt, inte brev.'],
   ['Ställning','Platsen där man ligger och väntar. Länge. Ofta i blöta.'],
   ['Mörkerdisciplin','Inget ljus syns. Inte ens mobilen. Särskilt inte mobilen.'],
-  ['Fältranson','Mat i påse. Smakar förvånansvärt bra klockan 03.'],
+  ['Ration','Mat i påse, formellt ranson. Smakar förvånansvärt bra klockan 03.'],
   ['Kamrathjälp','Första hjälpen som varje soldat kan. Be gärna om en demo.'],
   ['Tratt','Person som stoppar informationsflödet. Allt går in, inget kommer ut.'],
   ['”Hjälte”','Någon som tyvärr utför ett ”hjältedåd”. Får också höra om det. Länge.'],
@@ -504,7 +504,7 @@ function fillCols(id, cols){
 var G = [
   ['Jävla','Satans','Helvetes','Förbannade','Äckliga','Vidriga','Förskräckliga','Överskattade','Genomblöta','Djävulska','Bedrövliga','Pinsamma','Vedervärdiga','Iskalla'],
   ['skit','piss','skräp','kass','tratt','röv','mupp','pajas','klant','strunt','bajs','skrutt','sump','dår'],
-  ['övningen','eldposten','fältransonen','20-tältet','bandvagnen','troppchefen','plutonschefen','ordern','kaffet','sovsäcken','kaminen','regnet','fälttoaletten','hemvärnsgården']
+  ['övningen','eldposten','rationen','20-tältet','bandvagnen','troppchefen','plutonschefen','ordern','kaffet','sovsäcken','kaminen','regnet','fälttoaletten','hemvärnsgården']
 ];
 fillCols('gcols', G);
 $('gbtn').addEventListener('click', function(){ $('gout').textContent = pick(G[0]) + ' ' + pick(G[1]) + pick(G[2]) + '!'; });
@@ -598,23 +598,23 @@ D.forEach(function(d){
 
 /* ---------- Korsord ---------- */
 var K = [
-  '.....F........',
-  '.K.HJÄLTE..T..',
-  '.S...L.....R..',
-  'UPPFATTAT..O..',
-  '.....R.....P..',
-  '.KAMRATHJÄLP..',
-  '.F...N.....C..',
-  '.Ö...S.B...H..',
-  '...E.O.A..REGN',
-  'STÄLLNING..F..',
-  '...D...D....O.',
-  '...P...V....R.',
-  '...O..SAMBAND.',
-  '...S...G....E.',
-  'TRATT.GNÄLL.R.'
+  '....KFÖ...REGN',
+  '..K.A.....A...',
+  '..SAMBAND.T...',
+  '..P.R.....I..H',
+  '....A...G.O..J',
+  '.U.STÄLLNING.Ä',
+  '.P..H...Ä....L',
+  '.P..J..ELDPOST',
+  '.F..Ä...L....E',
+  '.A..L.........',
+  '.TROPPCHEF....',
+  '.T.R..........',
+  'BANDVAGN......',
+  '.T.E..........',
+  '..TRATT.......'
 ];
-var L = [[7,11],[8,7],[3,0],[11,3],[9,1],[12,9],[14,2],[1,3],[6,5],[5,7],[10,12],[6,1]];   // lösningsrutorna i ordning, [rad, kolumn] – bokstäverna bildar lösningsordet
+var L = [[10,7],[14,4],[5,1],[3,2],[2,10],[12,0],[2,6],[3,13],[0,13],[6,4],[7,11],[0,5]];   // lösningsrutorna i ordning, [rad, kolumn] – bokstäverna bildar lösningsordet
 var KH = K.length, KW = K[0].length, kg = $('kgrid'), inputs = {}, dir = 'A', cur = null;
 kg.style.gridTemplateColumns = 'repeat(' + KW + ', minmax(0, 1fr))';
 var open = function(r, c){ return r >= 0 && r < KH && c >= 0 && c < KW && K[r].charAt(c) !== '.'; };
