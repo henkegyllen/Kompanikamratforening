@@ -59,6 +59,15 @@ section .lead{margin:0 0 16px;color:var(--muted);font-weight:600}
 #quiz .nav{display:flex;gap:10px;margin-top:14px}
 #quiz .nav .btn{border-color:rgba(216,212,196,.5);font-size:16px;min-height:44px}
 
+/* Bingo */
+.bgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.bcell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;text-align:center;background:var(--card);color:var(--text);border:2px solid transparent;border-radius:10px;padding:4px;font:inherit;font-weight:600;font-size:clamp(12px,3.5vw,16px);line-height:1.12;hyphens:auto;overflow-wrap:break-word;transition:background .2s,transform .15s}
+.bcell:active{transform:scale(.95)}
+.bcell.on{background:var(--yellow);color:var(--ink)}
+.bcell.win{background:var(--ok);color:var(--ink);border-color:var(--text)}
+.bmsg{text-align:center;font-weight:700;min-height:24px;margin:12px 0}
+.bmsg.bingo{font-family:'Oswald',sans-serif;font-size:30px;line-height:1.1;text-transform:uppercase;color:var(--yellow)}
+
 /* Ordlista */
 .search{width:100%;min-height:48px;border-radius:var(--r);border:2px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:18px;padding:8px 14px}
 .search::placeholder{color:#c3bfae}
@@ -170,6 +179,7 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
 <nav class="chips" aria-label="Innehåll">
   <div class="row">
     <a href="#test">Testet</a>
+    <a href="#bingo">Bingo</a>
     <a href="#ordlista">Ordlista</a>
     <a href="#gnall">Gnällmall</a>
     <a href="#ursakt">Ursäkter</a>
@@ -186,6 +196,14 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
   <h2>Var hör du hemma i 333?</h2>
   <p class="lead">Svara ärligt. Det blir regn ändå.</p>
   <div id="quiz" class="card" aria-live="polite"></div>
+</section>
+
+<section id="bingo">
+  <h2>Middagsbingo</h2>
+  <p class="lead">Kryssa när det händer. Fyra i rad – vågrätt, lodrätt eller diagonalt – ger bingo. Ropa högt!</p>
+  <div class="bgrid" id="bgrid"></div>
+  <p class="bmsg" id="bmsg" aria-live="polite"></p>
+  <button class="btn small" id="bnew" type="button">Ny bricka</button>
 </section>
 
 <section id="ordlista">
@@ -388,6 +406,54 @@ function go(id, push){
   quiz.appendChild(nav);
 }
 go('start');
+
+/* ---------- Middagsbingo ---------- */
+var BI = [
+  'Någon avslutar med ”kom”','Någon säger ”uppfattat”','KC nämner regn','Samma övnings\u00ADhistoria två gånger',
+  'Någon har ätit upp innan alla satt sig','En bild på en bandvagn visas','”Det var värre på min tid”','Någon pratar om nästa övning',
+  'En förkortning ingen civil förstår','Maten kallas ”utspisning”','Någon har pannlampa med sig','Någon klagar på kaffet',
+  'Någon säger ”fältmässigt”','Ett tal drar över tiden','”När jag låg på KFÖ …”','Någon gnäller – med glädje',
+  '”Bra terräng” utanför fönstret','Fältransoner omtalas med värme','Någon bär något grönt','Någon visar sin kniv',
+  '”Order är order”','En anhörig säger ”kom”','Någon bokstaverar sitt namn','Tiden anges som ”nittonhundra”',
+  'Någon somnar nästan vid bordet','Någon pratar om kaminen','Blöta kängor nämns','”Det löser sig”',
+  'Skål för de anhöriga','Någon nämner KSP:n','”Vi tar det på nästa övning”','Sömnbrist nämns som en merit'
+];
+var BKEY = 'kkf-bingo-1', bstate = null, blines = 0;
+var LINES = (function(){ var L = [], k; for (k = 0; k < 4; k++) { L.push([k*4, k*4+1, k*4+2, k*4+3]); L.push([k, k+4, k+8, k+12]); } L.push([0, 5, 10, 15]); L.push([3, 6, 9, 12]); return L; })();
+function bsave(){ try { localStorage.setItem(BKEY, JSON.stringify(bstate)); } catch (e) {} }   // brickan finns kvar om sidan laddas om
+function bnew(){
+  var idx = BI.map(function(_, i){ return i; });
+  for (var i = idx.length - 1; i > 0; i--) { var j = Math.floor(Math.random()*(i+1)), s = idx[i]; idx[i] = idx[j]; idx[j] = s; }
+  bstate = {i: idx.slice(0, 16), m: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}; bsave(); bdraw();
+}
+function bdraw(){
+  var g = $('bgrid'); g.innerHTML = '';
+  bstate.i.forEach(function(n, k){
+    var b = el('button', {'class':'bcell', type:'button'}, BI[n]);
+    b.addEventListener('click', function(){ bstate.m[k] = bstate.m[k] ? 0 : 1; bsave(); bcheck(true); });
+    g.appendChild(b);
+  });
+  bcheck(false);
+}
+function bcheck(fest){
+  var cells = $('bgrid').children, won = LINES.filter(function(L){ return L.every(function(k){ return bstate.m[k]; }); }), inWin = {};
+  won.forEach(function(L){ L.forEach(function(k){ inWin[k] = 1; }); });
+  for (var k = 0; k < cells.length; k++) {
+    cells[k].className = 'bcell' + (bstate.m[k] ? ' on' : '') + (inWin[k] ? ' win' : '');
+    cells[k].setAttribute('aria-pressed', bstate.m[k] ? 'true' : 'false');
+  }
+  var n = bstate.m.filter(Boolean).length, msg = $('bmsg');
+  msg.className = 'bmsg' + (won.length ? ' bingo' : '');
+  msg.textContent = won.length > 1 ? 'Bingo × ' + won.length + '!' : won.length ? 'Bingo! Ropa högt.' : n + ' av 16 kryssade';
+  if (fest && won.length > blines) { release(); burst(); }   // fest för varje ny rad
+  blines = won.length;
+}
+try { bstate = JSON.parse(localStorage.getItem(BKEY)); } catch (e) { bstate = null; }
+if (!bstate || !bstate.i || bstate.i.length !== 16 || !bstate.m || bstate.i.some(function(n){ return !(n >= 0 && n < BI.length); })) bnew(); else bdraw();
+$('bnew').addEventListener('click', function(){
+  if (bstate.m.some(Boolean) && !confirm('Ny bricka? Dina kryss försvinner.')) return;
+  bnew();
+});
 
 /* ---------- Ordlista ---------- */
 var W = [
