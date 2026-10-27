@@ -60,13 +60,13 @@ section .lead{margin:0 0 16px;color:var(--muted);font-weight:600}
 #quiz .nav .btn{border-color:rgba(216,212,196,.5);font-size:16px;min-height:44px}
 
 /* Ordlista */
-.search{width:100%;min-height:48px;border-radius:var(--r);border:2px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:18px;padding:8px 14px;margin-bottom:12px}
+.search{width:100%;min-height:48px;border-radius:var(--r);border:2px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:18px;padding:8px 14px}
 .search::placeholder{color:#c3bfae}
-dl.words{margin:0;display:flex;flex-direction:column;gap:8px}
-dl.words div{background:var(--card);border-radius:var(--r);padding:10px 14px}
+dl.words{margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
+dl.words div{background:var(--card2);border-radius:var(--r);padding:10px 14px}
 dl.words dt{font-family:'Oswald',sans-serif;font-weight:600;font-size:19px;text-transform:uppercase}
 dl.words dd{margin:2px 0 0;font-weight:500}
-.none{color:var(--muted);font-weight:600;display:none}
+.none{color:var(--muted);font-weight:600;display:none;margin:10px 0 0}
 
 /* Mallar */
 .out{min-height:110px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Oswald',sans-serif;font-size:26px;line-height:1.2;text-transform:uppercase;border-radius:var(--r);padding:16px;margin-bottom:12px}
@@ -192,8 +192,11 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
   <h2>Hemvärnska – civilska</h2>
   <p class="lead">Ordlista för anhöriga. Och nya soldater.</p>
   <input class="search" id="wsearch" type="search" placeholder="Sök ord …" aria-label="Sök i ordlistan">
-  <dl class="words" id="words"></dl>
-  <p class="none" id="wnone">Inget sådant ord. Fråga en tratt.</p>
+  <details id="wlist">
+    <summary>Visa hela ordlistan</summary>
+    <dl class="words" id="words"></dl>
+    <p class="none" id="wnone">Inget sådant ord. Fråga en tratt.</p>
+  </details>
 </section>
 
 <section id="gnall">
@@ -418,6 +421,7 @@ W.forEach(function(w){
 });
 $('wsearch').addEventListener('input', function(){
   var q = this.value.trim().toLowerCase(), any = false;
+  if (q) $('wlist').open = true;   // sökningen fäller ut listan
   rows.forEach(function(r){ var m = !q || r.dataset.k.indexOf(q) > -1; r.style.display = m ? '' : 'none'; if (m) any = true; });
   $('wnone').style.display = any ? 'none' : 'block';
 });
