@@ -101,9 +101,11 @@ summary{font-weight:700;cursor:pointer;min-height:28px}
 .kgrid{display:grid;gap:0;width:100%;margin:0 auto 14px;touch-action:manipulation}
 .kcell{position:relative;aspect-ratio:1/1}
 .kcell.open{background:#f6f4ec;outline:1.5px solid var(--ink)}
+.kcell.los{background:#efe3a0}
 .kcell input{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;text-align:center;font-family:'Oswald',sans-serif;font-size:clamp(12px,4vw,20px);font-weight:600;color:var(--ink);text-transform:uppercase;padding:0;border-radius:0;caret-color:transparent}
 .kcell input:focus{outline:3px solid var(--yellow);outline-offset:-3px;background:#fff8c4}
 .kcell .num{position:absolute;left:2px;top:0;font-size:9px;font-weight:700;color:var(--ink);pointer-events:none;line-height:1}
+.kcell .lnum{position:absolute;right:2px;bottom:1px;font-size:9px;font-weight:700;color:#6b5d0e;pointer-events:none;line-height:1}
 .kcell.right{background:#cfe8c3}
 .kcell.wrong{background:#f4c4b5}
 .clues{display:grid;grid-template-columns:1fr;gap:12px}
@@ -111,6 +113,14 @@ summary{font-weight:700;cursor:pointer;min-height:28px}
 .clues ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-weight:500}
 .clues li b{display:inline-block;min-width:26px}
 .kmsg{text-align:center;font-weight:700;min-height:24px;margin:10px 0}
+.losning{margin-top:18px;background:var(--card);border-radius:var(--r);padding:14px}
+.losning h3{font-size:18px;border-bottom:3px solid var(--yellow);padding-bottom:2px;margin-bottom:10px}
+.lgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px}
+.lcell{position:relative;aspect-ratio:1/1;background:#efe3a0;outline:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:clamp(13px,4.2vw,22px);font-weight:600;color:var(--ink)}
+.lcell .lnum{position:absolute;left:2px;top:0;font-size:9px;font-weight:700;line-height:1}
+.lcell.right{background:#cfe8c3}
+.lcell.wrong{background:#f4c4b5}
+.lclue{text-align:center;font-weight:700;font-size:19px;margin:10px 0 0}
 
 /* Tack */
 .thanks{border:4px solid var(--yellow);border-radius:var(--r);padding:6px}
@@ -246,7 +256,7 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
 
 <section id="korsord">
   <h2>Kompaniets korsord</h2>
-  <p class="lead">Tryck på en ruta och skriv.</p>
+  <p class="lead">Tryck på en ruta och skriv. De gula rutorna bildar lösningsordet längst ner.</p>
   <div class="kgrid" id="kgrid"></div>
   <div class="row2">
     <button class="btn primary small" id="kcheck" type="button">Rätta</button>
@@ -255,23 +265,29 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
   <p class="kmsg" id="kmsg" aria-live="polite"></p>
   <div class="clues">
     <div><h3>Vågrätt</h3><ol>
-      <li><b>1</b> Varje mening slutar med ”kom” (7)</li>
-      <li><b>4</b> Där man ligger och väntar. Länge. (9)</li>
-      <li><b>8</b> Första hjälpen alla soldater kan (11)</li>
-      <li><b>11</b> Håller kaminen vid liv på natten (7)</li>
-      <li><b>12</b> Förekommer på varje övning (4)</li>
+      <li><b>3</b> Utför hjältedåd, får beröm (6)</li>
+      <li><b>5</b> Betyder inte att det blir gjort (9)</li>
+      <li><b>6</b> Första hjälpen alla soldater kan (11)</li>
+      <li><b>9</b> Förekommer på varje övning (4)</li>
+      <li><b>10</b> Där man ligger och väntar. Länge. (9)</li>
+      <li><b>12</b> Varje mening slutar med ”kom” (7)</li>
       <li><b>13</b> Allt går in, inget kommer ut (5)</li>
+      <li><b>14</b> Soldatens naturliga tillstånd (5)</li>
     </ol></div>
     <div><h3>Lodrätt</h3><ol>
-      <li><b>2</b> Tar sig fram överallt. Långsamt. (8)</li>
-      <li><b>3</b> Bärs av någon som inte valde det (3)</li>
-      <li><b>5</b> Får gediget mest skäll (9)</li>
-      <li><b>6</b> Soldatens naturliga tillstånd (5)</li>
-      <li><b>7</b> Mat i påse, bäst kl 03 (10)</li>
-      <li><b>8</b> Årets stora övning, förk. (3)</li>
-      <li><b>9</b> Utför hjältedåd, får beröm (6)</li>
-      <li><b>10</b> Gäller ofta i tio minuter (5)</li>
+      <li><b>1</b> Mat i påse, bäst kl 03 (10)</li>
+      <li><b>2</b> Bärs av någon som inte valde det (3)</li>
+      <li><b>4</b> Får gediget mest skäll (9)</li>
+      <li><b>6</b> Årets stora övning, förk. (3)</li>
+      <li><b>7</b> Tar sig fram överallt. Långsamt. (8)</li>
+      <li><b>8</b> Håller kaminen vid liv på natten (7)</li>
+      <li><b>11</b> Gäller ofta i tio minuter (5)</li>
     </ol></div>
+  </div>
+  <div class="losning">
+    <h3>Lösningsord</h3>
+    <div class="lgrid" id="lgrid" aria-live="polite"></div>
+    <p class="lclue">Jörns grad i Heer</p>
   </div>
 </section>
 
@@ -512,29 +528,34 @@ D.forEach(function(d){
 
 /* ---------- Korsord ---------- */
 var K = [
-  '..SAMBAND.....',
-  'K....A........',
-  'STÄLLNING..T..',
-  'P....D...G.R.F',
-  '.....V...N.O.Ä',
-  '.KAMRATHJÄLP.L',
-  '.F...G.J.L.P.T',
-  '.Ö.O.N.Ä.L.C.R',
-  '...R...L...H.A',
-  '.ELDPOST..REGN',
-  '...E...E...F.S',
-  '..TRATT......O',
-  '.............N'
+  '.....F........',
+  '.K.HJÄLTE..T..',
+  '.S...L.....R..',
+  'UPPFATTAT..O..',
+  '.....R.....P..',
+  '.KAMRATHJÄLP..',
+  '.F...N.....C..',
+  '.Ö...S.B...H..',
+  '...E.O.A..REGN',
+  'STÄLLNING..F..',
+  '...D...D....O.',
+  '...P...V....R.',
+  '...O..SAMBAND.',
+  '...S...G....E.',
+  'TRATT.GNÄLL.R.'
 ];
+var L = [[7,11],[8,7],[3,0],[11,3],[9,1],[12,9],[14,2],[1,3],[6,5],[5,7],[10,12],[6,1]];   // lösningsrutorna i ordning, [rad, kolumn] – bokstäverna bildar lösningsordet
 var KH = K.length, KW = K[0].length, kg = $('kgrid'), inputs = {}, dir = 'A', cur = null;
 kg.style.gridTemplateColumns = 'repeat(' + KW + ', minmax(0, 1fr))';
 var open = function(r, c){ return r >= 0 && r < KH && c >= 0 && c < KW && K[r].charAt(c) !== '.'; };
-var num = 0;
+var num = 0, losAt = {};
+L.forEach(function(p, i){ losAt[p[0] + ',' + p[1]] = i; });
 for (var r = 0; r < KH; r++) for (var c = 0; c < KW; c++) {
-  var cell = el('div', {'class':'kcell' + (open(r,c) ? ' open' : '')});
+  var cell = el('div', {'class':'kcell' + (open(r,c) ? ' open' : '') + (losAt[r + ',' + c] != null ? ' los' : '')});
   if (open(r, c)) {
     var a = !open(r, c-1) && open(r, c+1), d = !open(r-1, c) && open(r+1, c);
     if (a || d) cell.appendChild(el('span', {'class':'num'}, String(++num)));
+    if (losAt[r + ',' + c] != null) cell.appendChild(el('span', {'class':'lnum'}, String(losAt[r + ',' + c] + 1)));
     var inp = el('input', {maxlength:'1', autocomplete:'off', autocapitalize:'characters', spellcheck:'false', 'aria-label':'Rad ' + (r+1) + ', kolumn ' + (c+1)});
     (function(r, c, inp, cell){
       inp.addEventListener('focus', function(){
@@ -549,7 +570,7 @@ for (var r = 0; r < KH; r++) for (var c = 0; c < KW; c++) {
       });
       inp.addEventListener('blur', function(){ inp.dataset.f = ''; });
       inp.addEventListener('input', function(){
-        inp.value = inp.value.slice(-1).toUpperCase(); cell.classList.remove('right','wrong');
+        inp.value = inp.value.slice(-1).toUpperCase(); cell.classList.remove('right','wrong'); losUpd();
         if (!inp.value) return;
         var nr = r + (dir === 'D' ? 1 : 0), nc = c + (dir === 'A' ? 1 : 0);
         if (open(nr, nc)) { cur = [nr, nc]; inputs[nr + ',' + nc].focus(); inputs[nr + ',' + nc].select(); }
@@ -557,7 +578,7 @@ for (var r = 0; r < KH; r++) for (var c = 0; c < KW; c++) {
       inp.addEventListener('keydown', function(e){
         if (e.key === 'Backspace' && !inp.value) {
           var pr = r - (dir === 'D' ? 1 : 0), pc = c - (dir === 'A' ? 1 : 0);
-          if (open(pr, pc)) { e.preventDefault(); cur = [pr, pc]; var p = inputs[pr + ',' + pc]; p.value = ''; p.focus(); }
+          if (open(pr, pc)) { e.preventDefault(); cur = [pr, pc]; var p = inputs[pr + ',' + pc]; p.value = ''; p.focus(); losUpd(); }
         }
       });
     })(r, c, inp, cell);
@@ -565,6 +586,11 @@ for (var r = 0; r < KH; r++) for (var c = 0; c < KW; c++) {
   }
   kg.appendChild(cell);
 }
+var lcells = L.map(function(p, i){
+  var d = el('div', {'class':'lcell'}); d.appendChild(el('span', {'class':'lnum'}, String(i+1))); d.appendChild(el('span'));
+  $('lgrid').appendChild(d); return d;
+});
+function losUpd(){ L.forEach(function(p, i){ lcells[i].lastChild.textContent = inputs[p[0] + ',' + p[1]].value; lcells[i].classList.remove('right','wrong'); }); }
 $('kcheck').addEventListener('click', function(){
   var tot = 0, ok = 0, filled = 0;
   Object.keys(inputs).forEach(function(k){
@@ -573,10 +599,12 @@ $('kcheck').addEventListener('click', function(){
     if (!inp.value) return; filled++;
     if (inp.value === want) { ok++; cell.classList.add('right'); } else cell.classList.add('wrong');
   });
+  L.forEach(function(p, i){ var v = inputs[p[0] + ',' + p[1]].value; if (v) lcells[i].classList.add(v === K[p[0]].charAt(p[1]) ? 'right' : 'wrong'); });
   $('kmsg').textContent = ok === tot ? 'Allt rätt! Du får gå hem från KFÖ en dag tidigare. (Nej.)' : ok + ' av ' + tot + ' rutor rätt.' + (filled < tot ? ' Facit: fråga en tratt.' : '');
 });
 $('kclear').addEventListener('click', function(){
   Object.keys(inputs).forEach(function(k){ inputs[k].value = ''; inputs[k].parentNode.classList.remove('right','wrong'); });
+  losUpd();
   $('kmsg').textContent = '';
 });
 
