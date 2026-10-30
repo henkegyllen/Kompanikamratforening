@@ -75,6 +75,7 @@ dl.words{margin:10px 0 0;display:flex;flex-direction:column;gap:8px}
 dl.words div{background:var(--card2);border-radius:var(--r);padding:10px 14px}
 dl.words dt{font-family:'Oswald',sans-serif;font-weight:600;font-size:19px;text-transform:uppercase}
 dl.words dd{margin:2px 0 0;font-weight:500}
+.wgrp{font-size:18px;border-bottom:3px solid var(--yellow);padding-bottom:2px;margin:18px 0 0}
 .none{color:var(--muted);font-weight:600;display:none;margin:10px 0 0}
 
 /* Mallar */
@@ -211,8 +212,8 @@ section+section::before{content:"";position:absolute;top:-2px;left:0;width:56px;
   <p class="lead">Ordlista för anhöriga. Och nya soldater.</p>
   <input class="search" id="wsearch" type="search" placeholder="Sök ord …" aria-label="Sök i ordlistan">
   <details id="wlist">
-    <summary>Visa hela ordlistan</summary>
-    <dl class="words" id="words"></dl>
+    <summary>Visa hela ordlistan (64 ord)</summary>
+    <div id="words"></div>
     <p class="none" id="wnone">Inget sådant ord. Fråga en tratt.</p>
   </details>
 </section>
@@ -457,38 +458,99 @@ $('bnew').addEventListener('click', function(){
 
 /* ---------- Ordlista ---------- */
 var W = [
-  ['AK','Automatkarbin. Följer med överallt, även till toaletten.'],
-  ['KSP','Kulspruta. Låter mycket. Bärs av någon som inte valde det.'],
-  ['GRG','Granatgevär. Bärs på axeln, hörs i grannkommunen.'],
-  ['BV','Bandvagn. Tar sig fram överallt. Långsamt. Högljutt.'],
-  ['KFÖ','Krigsförbandsövning. Årets stora övning. Hemkomst: trött.'],
-  ['SÖF','Särskild övning för förband. Kortare, men regnar lika mycket.'],
-  ['Order','Planen. Gäller tills nästa order, ofta om tio minuter.'],
-  ['Fältmässigt','Utan bekvämligheter. Fältmässig dusch = regn.'],
-  ['Löst / skarpt','Övningsammunition / riktig. Skillnaden är viktig.'],
-  ['Samband','Radiokontakt. Varje mening slutar med ”kom”.'],
-  ['Kom / slut','Din tur att prata / samtalet är över. Funkar dåligt vid middagsbordet.'],
-  ['Sambandsapa','Se ”Samband”. Kärleksfullt menat.'],
-  ['20-tält','Tält för 20 soldater och en kamin. Luktar som det låter.'],
-  ['Eldpost','Håller kaminen vid liv medan alla andra snarkar. Post = vakt, inte brev.'],
-  ['Ställning','Platsen där man ligger och väntar. Länge. Ofta i blöta.'],
-  ['Mörkerdisciplin','Inget ljus syns. Inte ens mobilen. Särskilt inte mobilen.'],
-  ['Ration','Mat i påse, formellt ranson. Smakar förvånansvärt bra klockan 03.'],
-  ['Kamrathjälp','Första hjälpen som varje soldat kan. Be gärna om en demo.'],
-  ['Tratt','Person som stoppar informationsflödet. Allt går in, inget kommer ut.'],
-  ['”Hjälte”','Någon som tyvärr utför ett ”hjältedåd”. Får också höra om det. Länge.'],
-  ['Hjälte','Någon som utför ett hjältedåd. Får beröm.'],
-  ['Gnäll','Soldatens naturliga tillstånd. Tecken på att allt är normalt.']
+  ['Enheter', [
+    ['Stridspar','Två soldater som ansvarar för varandra, en av dem chef. Ska följa med varandra överallt, alltid. Ja, även på toaletten.'],
+    ['Omgång','Minst två stridspar. Gruppchefens möjlighet att manövrera.'],
+    ['Grupp','Runt åtta soldater med en gruppchef. Delar fordon, tält och alla skämt.'],
+    ['Pluton','Fyra grupper och en plutonsledning, runt 40 soldater.'],
+    ['Tropp','Stab och samband, sjukvård, pack- och kokgrupp. Ser till att resten får ledning, vård, prylar och mat.'],
+    ['Kompani','Flera plutoner, en tropp och kompaniledningen, runt 150 personer. 333 är ett. Därav middagen.'],
+    ['Bataljon','Flera kompanier med stab och specialplutoner. 333 hör till 33. Norra Smålandsbataljonen.'],
+    ['Militärregion (MR)','Försvarsmaktens indelning av landet i fem regioner, där Gotland är en egen. 333 hör till MR Syd.'],
+    ['Insatskompani','Hemvärnskompani för de rörliga uppgifterna. Mer övning, fler fordon. Som 333.'],
+    ['Bevakningskompani','Hemvärnskompani som bevakar och skyddar viktiga platser. Står still längre, fryser mer.'],
+    ['Hjulgående / bandgående','Plutonen åker hjulfordon respektive bandvagn. 333 har två hjulgående och en bandgående pluton.']
+  ]],
+  ['Befattningar', [
+    ['KC','Kompanichef. Bestämmer över kompaniet, och över när middagen börjar.'],
+    ['Stf','Ställföreträdande, som i stf KC. Kliver in när chefen är borta.'],
+    ['KFJ','Kompanifanjunkare. Vet var allt finns, och hur det används.'],
+    ['KVM','Kvartermästare. Vet var allt inte finns och hur det inte ska användas.'],
+    ['UH-bef','Underhållsbefäl. Vet i varje fall vad som finns i dag, och kanske i morgon. Troligen den som har tankkortet i benfickan.'],
+    ['Sjukvårdare','Köttmekaniker. Ämnar hålla de delar av kroppen som ska vara i kroppen inuti kroppen. Diger mängd Bamseplåster tillgängliga.'],
+    ['Gruppchef','Soldatens närmaste chef. Vet var alla i gruppen är och hur de mår.'],
+    ['Plutonschef','Leder plutonen. Fördelar uppgifterna och planerar dygnet, ofta flera gånger per dygn.'],
+    ['Troppchef','Leder troppen. Får gediget mest skäll.'],
+    ['2-funktionen','Underrättelser: vad vet vi om fienden, terrängen och vädret? Egentligen ingen funktion, om en inte ser gissningar som funktionalitet. Påstår sig kunna läsa tankar och se in i framtiden.']
+  ]],
+  ['På övningen', [
+    ['KFÖ','Krigsförbandsövning. Årets stora övning. Hemkomst: trött.'],
+    ['SÖF','Särskild övning för förband. Kortare, men regnar lika mycket.'],
+    ['Kallelse','Brevet om nästa övning. Kommer alltid efter att semestern är bokad.'],
+    ['Order','Planen. Gäller tills nästa order, ofta om tio minuter.'],
+    ['Förläggning','Där man bor under övningen: tält, skola eller logement. Hemma kallat vardagsrummet.'],
+    ['Utspisning','När och var maten serveras. Hemma kallat köket.'],
+    ['Ration','Mat i påse, formellt ranson. Smakar förvånansvärt bra klockan 03.'],
+    ['20-tält','Tält för 20 soldater och en kamin. Luktar som det låter.'],
+    ['Eldpost','Håller kaminen vid liv medan alla andra snarkar. Se ”Post”.'],
+    ['Post','Inte brev utan vakt. För i Försvarsmakten är en post vakt om den inte är vakt, för då är den vakt, om den inte är vakt som i skyddsvakt.'],
+    ['Infartspost','Vakten vid infarten. Ingen kommer in utan att säga vem och varför.'],
+    ['Ställning','Platsen där man ligger och väntar. Länge. Ofta i blöta.'],
+    ['Igelkottsförsvar','Gruppen försvarar åt alla håll samtidigt. Som en igelkott, fast blötare.'],
+    ['SOLO','Stanna, observera, lyssna, ofta. Med andra ord: traska inte bara framåt, utan ta in omgivningen så att ingen smyger sig på dig.'],
+    ['Mörkerdisciplin','Inget ljus syns. Inte ens mobilen. Särskilt inte mobilen.'],
+    ['Fältmässigt','Utan bekvämligheter. Fältmässig dusch = regn.'],
+    ['Kamrathjälp','Första hjälpen som varje soldat kan. Be gärna om en demo.'],
+    ['7S-rapport','Mall för att rapportera vad man ser: stund, ställe, styrka, slag, sysselsättning, symbol, sagesman. Funkar även på grannen.'],
+    ['Stridsvärde','Hur väl soldaten eller förbandet klarar uppgiften just nu. Sjunker med sömnbrist, stiger med kaffe.']
+  ]],
+  ['Vapen och prylar', [
+    ['AK','Automatkarbin. Följer med överallt, även till toaletten.'],
+    ['KSP / KSP-skytt','Kulspruta. Bärs av en soldat som är väldigt ledsen ända tills den får användas. Bära = sämre stridsvärde, använda = bättre stridsvärde.'],
+    ['GRG / GRG-skytt','Granatgevär. Multiverktyg för att leverera kompanichefens åsikt genom luftbrisader. Bra på att få stora problem att bli många små.'],
+    ['Prickskytt','Ser saker på långa avstånd. Duktig på att träffa nytt folk.'],
+    ['BV','Bandvagn. Tar sig fram överallt. Långsamt. Högljutt.'],
+    ['Löst / skarpt','Övningsammunition / riktig. Skillnaden är viktig.'],
+    ['Säkring','Den mekaniska delen som förhindrar pang-pang-knappen från att rendera stora problem när soldaten gör fel.'],
+    ['Vapenkontroll','Kontrollera att vapnet fungerar som det ska och är säkrat.'],
+    ['Ammo','Ammunition. Tung, och alltid någon annans tur att bära.'],
+    ['Persedlar','Kläder och utrustning som soldaten har kvitterat ut. Ligger ofta blöta i hallen.'],
+    ['Materiel / M-materiel','Försvarsmaktens utrustning, från tält till fordon. Stavas med e. Fråga inte varför.'],
+    ['M-nummer','Identifikationsnummer för varenda pryl som finns i Försvarsmakten, ner till enskilda slangar och upp till hela radarsystem. Fråga Brose om M-nummer på öl.']
+  ]],
+  ['Radio och språk', [
+    ['Samband','Radiokontakt. Varje mening slutar med ”kom”.'],
+    ['Kom / slut','Din tur att prata / samtalet är över. Funkar dåligt vid middagsbordet.'],
+    ['Sambandsapa','Se ”Samband”. Kärleksfullt menat.'],
+    ['Uppfattat','Jag har hört och förstått. Betyder inte att det blir gjort (se korsordet).'],
+    ['Anrop','Radions namn på en person eller enhet, till exempel ErikBertil 5. Används i stället för namn.'],
+    ['Bokstavering','Adam, Bertil, Cesar … Så stavar man i radio så att inget blir fel. Prova med ditt eget namn.']
+  ]],
+  ['Slang', [
+    ['Tratt','Person som stoppar informationsflödet. Allt går in, inget kommer ut.'],
+    ['”Hjälte”','Någon som tyvärr utför ett ”hjältedåd”. Får också höra om det. Länge.'],
+    ['Hjälte','Någon som utför ett hjältedåd. Får beröm.'],
+    ['Gnäll','Soldatens naturliga tillstånd. Tecken på att allt är normalt.']
+  ]],
+  ['Handböcker', [
+    ['SoldF','Soldaten i fält, soldatens handbok. Vissa kan citera den utantill. Tyvärr.'],
+    ['SoldR Mtrl','Soldatreglemente för materiel.']
+  ]]
 ];
-var words = $('words'), rows = [];
-W.forEach(function(w){
-  var d = el('div'); d.appendChild(el('dt', null, w[0])); d.appendChild(el('dd', null, w[1]));
-  d.dataset.k = (w[0] + ' ' + w[1]).toLowerCase(); words.appendChild(d); rows.push(d);
+var words = $('words'), rows = [], grupper = [];
+W.forEach(function(g){   // en mellanrubrik och en lista per kategori
+  var gr = {h: el('h3', {'class':'wgrp'}, g[0]), dl: el('dl', {'class':'words'}), rows: []};
+  g[1].forEach(function(w){
+    var d = el('div'); d.appendChild(el('dt', null, w[0])); d.appendChild(el('dd', null, w[1]));
+    d.dataset.k = (w[0] + ' ' + w[1]).toLowerCase(); gr.dl.appendChild(d); gr.rows.push(d); rows.push(d);
+  });
+  words.appendChild(gr.h); words.appendChild(gr.dl); grupper.push(gr);
 });
 $('wsearch').addEventListener('input', function(){
   var q = this.value.trim().toLowerCase(), any = false;
   if (q) $('wlist').open = true;   // sökningen fäller ut listan
   rows.forEach(function(r){ var m = !q || r.dataset.k.indexOf(q) > -1; r.style.display = m ? '' : 'none'; if (m) any = true; });
+  grupper.forEach(function(g){ var v = g.rows.some(function(r){ return r.style.display !== 'none'; }); g.h.style.display = g.dl.style.display = v ? '' : 'none'; });
   $('wnone').style.display = any ? 'none' : 'block';
 });
 

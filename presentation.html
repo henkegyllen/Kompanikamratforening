@@ -143,7 +143,7 @@ opacity:0;transition:opacity .4s ease}
   <span class="it" data-from="3"><canvas data-sym="chef"></canvas>Chef</span>
   <span class="it" data-from="3"><canvas data-sym="stf"></canvas>Stf chef</span>
   <span class="it" data-from="4"><canvas data-sym="led"></canvas>Ledningens chefer</span>
-  <span class="it" data-from="5"><canvas data-sym="kf"></canvas>Kompaniförvaltare</span>
+  <span class="it" data-from="5"><canvas data-sym="kf"></canvas>Kompanifanjunkare</span>
   <span class="sep" data-from="3"></span>
   <span class="it" data-from="3"><span class="ech">•</span>grupp</span>
   <span class="it" data-from="4"><span class="ech">•••</span>pluton</span>
@@ -185,7 +185,7 @@ ingress:'Runt din soldat finns chefer och funktioner som leder, planerar och tar
 rollkort:[
 {id:'gc',rubrik:'Gruppchefen',text:'Soldatens närmaste chef. Leder gruppen på {grupp} och har koll på var alla är och hur de mår.'},
 {id:'pl',rubrik:'Plutonsledningen',text:'Plutonchef, stf och några till. Leder plutonens {pluton} – fördelar uppgifterna, planerar dygnet och ser till att grupperna har det de behöver.'},
-{id:'kl',rubrik:'Kompaniledningen',text:'KC, stf KC, KF med flera. Leder hela kompaniet på {kompani} – planerar övningar och insatser, ser till att människor, utrustning, mat och transporter fungerar och är länken uppåt. KF håller ihop det praktiska: materiel, förnödenheter och administration.'},
+{id:'kl',rubrik:'Kompaniledningen',text:'KC, stf KC, KFJ med flera. Leder hela kompaniet på {kompani} – planerar övningar och insatser, ser till att människor, utrustning, mat och transporter fungerar och är länken uppåt. KFJ håller ihop det praktiska: materiel, förnödenheter och administration.'},
 {id:'tr',rubrik:'Troppen',text:'Stab och samband, sjukvård, pack- och kokgrupp – {tropp} personer som ser till att kompaniet kan ledas, får vård, utrustning och mat.'}
 ]}
 ],
@@ -348,7 +348,7 @@ sätt(1,'Stridsparet','Ingen är ensam – varje soldat har en stridsparskamrat.
 if(me.led||me.kl)sätt(2,'Två stridspar','Två stridspar arbetar tillsammans – även i ledningen.');
 else sätt(2,'Omgången','Minst två stridspar bildar en omgång.');
 }
-if(me.kl)sätt(3,radNamn,`Kompanichef (KC), stf kompanichef (stf KC), kompaniförvaltare (KF) och ${EN[rowN-3]||rowN-3} till – ${rowN} i kompaniledningen.`);
+if(me.kl)sätt(3,radNamn,`Kompanichef (KC), stf kompanichef (stf KC), kompanifanjunkare (KFJ) och ${EN[rowN-3]||rowN-3} till – ${rowN} i kompaniledningen.`);
 else if(me.tr&&me.led)sätt(3,radNamn,'Troppchefen leder troppen.');
 else if(me.led&&isBat&&uf.typ)sätt(3,uf.tag==='Bataljonsstab'?'Bataljonsledningen':'Chefsgruppen',uf.tag==='Bataljonsstab'
 ?`Bataljonschefen (${sigP(batPar(b))||'BC'} 1), stf bataljonschef och bataljonsförvaltaren.`
@@ -369,10 +369,10 @@ u4t=`Fyra grupper à ${gsOf(uf.kind)} och plutonsledningen bildar en ${ord} – 
 (uf.mob==='H'||uf.mob==='B'?` Den är ${uf.mob==='H'?'hjulgående':'bandgående'} – ${EN[nUnitLed]} i plutonsledningen.`:uf.mob==='W'?' Den rör sig med båt.':'')}
 sätt(4,u4r,u4t);
 if(isBat)sätt(5,'Bataljonens plutoner',`${stor(lista(D.bplut.map(q=>best(q.tag))))} – plutonerna som hör direkt till bataljonen.`);
-else if(K.tropp)sätt(5,'Kompaniet',`${stor(EN[3])} skytteplutoner – ${mobText(K.mob.slice(0,3))} – en tropp med stab och samband, sjukvård, pack- och kokgrupp, och kompaniledningen med kompanichef (KC), stf kompanichef (stf KC) och kompaniförvaltare (KF)${aK?` – tillsammans ${kompNamn(K)} (${aK})`:''}.`);
+else if(K.tropp)sätt(5,'Kompaniet',`${stor(EN[3])} skytteplutoner – ${mobText(K.mob.slice(0,3))} – en tropp med stab och samband, sjukvård, pack- och kokgrupp, och kompaniledningen med kompanichef (KC), stf kompanichef (stf KC) och kompanifanjunkare (KFJ)${aK?` – tillsammans ${kompNamn(K)} (${aK})`:''}.`);
 else{const pw=CFG.plutonsord[K.typ]||['pluton','plutoner'],mt=K.typ==='I'?mobText(K.mob.slice(0,4)):'';
 const npK=CFG.plutonerPerKompani[K.typ]||4;
-sätt(5,'Kompaniet',`${stor(EN[npK])} ${pw[1]}${mt?` – ${mt} –`:''} och kompaniledningen med KC, stf KC och KF bildar ${medAnrop(kompNamn(K),aK)}.`)}
+sätt(5,'Kompaniet',`${stor(EN[npK])} ${pw[1]}${mt?` – ${mt} –`:''} och kompaniledningen med KC, stf KC och KFJ bildar ${medAnrop(kompNamn(K),aK)}.`)}
 { const typer={};for(const k of D.komp)typer[k.typ]=(typer[k.typ]||0)+1;
 const delar=Object.entries(typer).map(([t,n])=>{const o=CFG.kompaniord[t]||[t,t];return `${ETT[n]} ${n===1?o[0]:o[1]}`});
 delar.push(...D.bplut.map(q=>best(q.tag)));
@@ -387,7 +387,7 @@ INZ=[
 {rubrik:`${D.nr}. ${D.namn}`,text:'Kompanierna och bataljonens egna plutoner.'},
 isBat?{rubrik:'Bataljonens plutoner',text:'Ledningsplutonen och bataljonens egna plutoner.'}
 :{rubrik:kompNamn(K),text:K.tropp?'Tre skytteplutoner, en tropp och kompaniledningen.':`${stor(EN[CFG.plutonerPerKompani[K.typ]||4])} plutoner och kompaniledningen.`},
-{rubrik:u4r,text:me.kl?'KC, stf KC, KF med flera.':uf.tropp?'Fyra grupper och troppchefen.':uf.typ?`${stor(EN[uf.typ.grupper.length]||String(uf.typ.grupper.length))} grupper och cheferna.`:'Fyra grupper och plutonsledningen.'},
+{rubrik:u4r,text:me.kl?'KC, stf KC, KFJ med flera.':uf.tropp?'Fyra grupper och troppchefen.':uf.typ?`${stor(EN[uf.typ.grupper.length]||String(uf.typ.grupper.length))} grupper och cheferna.`:'Fyra grupper och plutonsledningen.'},
 {rubrik:radNamn,text:me.led||me.kl?'Ledningen, med chef och stf längst till vänster.':'Flera omgångar – chef och stf längst till vänster.'},
 rowN<2?{rubrik:radNamn,text:'Troppchefen.'}:{rubrik:'Stridsparet',text:'Din soldat och stridsparskamraten.'},
 {rubrik:'Här är din soldat',text:`${an||bet} – en markering på kartan ${ort}. Här börjar allt.`}

@@ -43,9 +43,9 @@ const CFG={
   gruppStorlek:{I:8,B:6,U:6,'Båt':6,S:6,spec:8},
   tropp:{ledning:1,grupper:[10,12,6,7],
          namn:['Stab och samband','Sjukvård','Packgrupp','Kokgrupp']},
-  kompaniledning:['KC','stf KC','KF','','','','',''],
+  kompaniledning:['KC','stf KC','KFJ','','','','',''],
   klGrupper:[4,4],
-  roller:{'KC':'chef','stf KC':'stf','KF':'kf'},
+  roller:{'KC':'chef','stf KC':'stf','KFJ':'kf'},
   langtUt:'soldater',
   plutonstyper:{
     Stab:{ledning:['BC','stf BC','BF'],grupper:[4,4,6,6,3],namn:['S1 Personaltjänst/Själavård/Info','S2 Underrättelse/Säkerhetstjänst','S3/5 Ledning/Samverkan/CBRN/Fältarbeten','S4 Logistik','S6 Ledningssystem']},
@@ -277,7 +277,7 @@ function betText(p){const [r,b,kg,u,row,i]=p.path;
   return [regOf(r).namn,b,kg,anropEnhet(p.path)||BOK[u]||u,row==='-'||row===BT.plutonsledning?null:(anropLed(p.path)||BOK[row]||row),pad2(i+1)].filter(v=>v!==null).join(' · ')}
 function betKod(p){const [,b,kg,u,row,i]=p.path;return [b,kg,u,row==='-'?null:row,pad2(i+1)].filter(v=>v!==null).join('-')}
 function befattning(p){
-  if(p.kl)return ({KC:'Kompanichef','stf KC':'Stf kompanichef',KF:'Kompaniförvaltare'})[p.tag]||'Kompaniledningen';
+  if(p.kl)return ({KC:'Kompanichef','stf KC':'Stf kompanichef',KFJ:'Kompanifanjunkare'})[p.tag]||'Kompaniledningen';
   if(p.tr&&p.led)return 'Troppchef';
   if(p.tag&&p.path[2]===BT.bataljon)return ({BC:'Bataljonschef','stf BC':'Stf bataljonschef',BF:'Bataljonsförvaltare'})[p.tag]||p.tag;
   if(p.led&&p.path[2]===BT.bataljon){const f=FK.get(p.path.slice(0,4).join('|'));if(f&&f.typ)return (p.role==='chef'?'Chef':p.role==='stf'?'Stf chef':'Chefsgruppen')+' · '+f.tag}
