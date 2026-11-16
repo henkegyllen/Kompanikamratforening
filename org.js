@@ -1,3 +1,4 @@
+// © 2026 Henrik Efternamn · github.com/henkegyllen/Kompanikamratforening
 // Organisationsmodellen för hemvärnet och 333 – delas av presentation.html och sok.html.
 // Bataljoner, kompanier, plutoner, gruppstorlekar, anropsregler och vilken soldat som är "din" ändras här.
 // Bygger på öppna källor och antaganden.
